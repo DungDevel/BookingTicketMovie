@@ -110,37 +110,29 @@ fun MainScreen(onItemClick: (FilmItemModel) -> Unit = {}){
 fun MainContent(onItemClick: (FilmItemModel) -> Unit){
 
     val viewModel: MainViewModel = hiltViewModel()
-    val upcoming = remember{ mutableStateListOf<FilmItemModel>() }
-    val newMoview = remember { mutableStateListOf<FilmItemModel>() }
+    val allFilms = remember { mutableStateListOf<FilmItemModel>() }
 
-    var showUpcomingLoad by remember { mutableStateOf(true) }
-    var showNewMoviesLoading by remember { mutableStateOf(true) }
+    var isLoadingFilms by remember { mutableStateOf(true) }
     var searchQuery by remember { mutableStateOf("") }
     var filterState by remember { mutableStateOf(MovieFilterState()) }
     var showFilterSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.loadUpcoming().observeForever {
-            upcoming.clear()
-            upcoming.addAll(it)
-            showNewMoviesLoading=false
+            allFilms.clear()
+            allFilms.addAll(it)
+            isLoadingFilms = false
         }
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.loadItems().observeForever {
-            newMoview.clear()
-            newMoview.addAll(it)
-            showUpcomingLoad=false
-        }
-    }
+    val newMoview = remember(allFilms.toList()) { allFilms.filter { it.IsNowShowing }}
+    val upcoming = remember(allFilms.toList()) { allFilms.filter { it.IsUpComing } }
+    val showNewMoviesLoading = isLoadingFilms
+    val showUpcomingLoad = isLoadingFilms
 
     val isSearching = searchQuery.isNotBlank()
     val hasActiveFilters = !filterState.isDefault
     val isBrowsing = isSearching || hasActiveFilters
-    val allFilms = remember(upcoming.toList(), newMoview.toList()) {
-        (newMoview + upcoming).distinctBy { it.id }
-    }
 
 
     val availableGenres = remember(allFilms) {
@@ -162,7 +154,7 @@ fun MainContent(onItemClick: (FilmItemModel) -> Unit){
         if (!isBrowsing) {
             emptyList()
         } else {
-            var list = allFilms
+            var list: List<FilmItemModel> = allFilms.toList()
 
             if (isSearching) {
                 val normalizedQuery = normalizeForSearch(searchQuery)
@@ -293,8 +285,6 @@ fun MainContent(onItemClick: (FilmItemModel) -> Unit){
                     )
                 }
             } else {
-                // Lưới thủ công (không dùng LazyVerticalGrid) vì đang nằm trong 1 Column
-                // đã verticalScroll ở ngoài -> lồng 2 lớp cuộn dọc sẽ crash.
                 Column(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -367,10 +357,6 @@ fun SectionTitle(title: String){
     )
 }
 
-/**
- * Chuẩn hoá chuỗi để so khớp tìm kiếm: bỏ dấu tiếng Việt (bao gồm cả "đ"/"Đ" vốn
- * không tự tách dấu qua NFD) và chuyển về chữ thường, giúp gõ không dấu vẫn tìm ra.
- */
 private fun normalizeForSearch(text: String): String {
     val withoutDBar = text.replace('đ', 'd').replace('Đ', 'D')
     val decomposed = java.text.Normalizer.normalize(withoutDBar, java.text.Normalizer.Form.NFD)

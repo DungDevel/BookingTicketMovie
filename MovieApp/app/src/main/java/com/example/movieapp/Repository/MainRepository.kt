@@ -16,27 +16,13 @@ class MainRepository @Inject constructor(
     private val api: ApiService
 ) {
 
-    fun loadUpcoming(): LiveData<MutableList<FilmItemModel>> {
+    fun loadFilms(): LiveData<MutableList<FilmItemModel>>{
         val listData = MutableLiveData<MutableList<FilmItemModel>>()
-        api.getUpcoming().enqueue(object : Callback<List<FilmItemModel>> {
-            override fun onResponse(call: Call<List<FilmItemModel>>, response: Response<List<FilmItemModel>>) {
+        api.getFilms().enqueue(object : Callback<List<FilmItemModel>>{
+            override fun onResponse(call: Call<List<FilmItemModel>>, response: Response<List<FilmItemModel>>){
                 listData.value = response.body()?.toMutableList() ?: mutableListOf()
             }
-            override fun onFailure(call: Call<List<FilmItemModel>>, t: Throwable) {
-                t.printStackTrace()
-                listData.value = mutableListOf()
-            }
-        })
-        return listData
-    }
-
-    fun loadItems(): LiveData<MutableList<FilmItemModel>> {
-        val listData = MutableLiveData<MutableList<FilmItemModel>>()
-        api.getItems().enqueue(object : Callback<List<FilmItemModel>> {
-            override fun onResponse(call: Call<List<FilmItemModel>>, response: Response<List<FilmItemModel>>) {
-                listData.value = response.body()?.toMutableList() ?: mutableListOf()
-            }
-            override fun onFailure(call: Call<List<FilmItemModel>>, t: Throwable) {
+            override fun onFailure(call: Call<List<FilmItemModel>>, t: Throwable){
                 t.printStackTrace()
                 listData.value = mutableListOf()
             }

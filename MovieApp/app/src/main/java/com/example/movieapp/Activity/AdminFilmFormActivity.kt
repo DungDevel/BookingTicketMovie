@@ -71,15 +71,11 @@ class AdminFilmFormActivity : BaseActivity() {
         }
 
         val existingFilm = intent.getSerializableExtra("film") as? FilmItemModel
-        val existingItemId = intent.getStringExtra("itemId")
-        val existingUpcomingId = intent.getStringExtra("upcomingId")
 
         setContent {
             AdminFilmFormScreen(
                 api = apiService,
                 existingFilm = existingFilm,
-                existingItemId = existingItemId,
-                existingUpcomingId = existingUpcomingId,
                 onSaved = { finish() },
                 onBackClick = { finish() }
             )
@@ -91,8 +87,6 @@ class AdminFilmFormActivity : BaseActivity() {
 fun AdminFilmFormScreen(
     api: ApiService,
     existingFilm: FilmItemModel?,
-    existingItemId: String?,
-    existingUpcomingId: String?,
     onSaved: () -> Unit,
     onBackClick: () -> Unit
 ) {
@@ -110,15 +104,15 @@ fun AdminFilmFormScreen(
     var genre by remember { mutableStateOf(existingFilm?.Genre?.joinToString(", ") ?: "") }
     var castList by remember { mutableStateOf(existingFilm?.Casts?.toList() ?: emptyList()) }
 
-    var includeInItem by remember { mutableStateOf(existingItemId != null) }
-    var includeInUpcoming by remember { mutableStateOf(existingUpcomingId != null) }
+    var isNowShowing by remember { mutableStateOf(existingFilm?.IsNowShowing ?: true) }
+    var isUpComing by remember { mutableStateOf(existingFilm?.IsUpComing ?: false) }
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
 
-    fun buildFilm(id: String): FilmItemModel{
+    fun buildFilm(): FilmItemModel{
         return FilmItemModel(
-            id = id,
+            id = existingFilm?.id ?: "",
             Title = title,
             Description = description,
             Poster = poster,
@@ -128,7 +122,9 @@ fun AdminFilmFormScreen(
             Year = year.toIntOrNull() ?: 0,
             price = price.toDoubleOrNull() ?: 0.0,
             Genre = ArrayList(genre.split(",").map { it.trim() }.filter { it.isNotBlank() }),
-            Casts = ArrayList(castList)
+            Casts = ArrayList(castList),
+            IsNowShowing = isNowShowing,
+            IsUpComing = isUpComing
         )
     }
 
@@ -141,7 +137,7 @@ fun AdminFilmFormScreen(
             errorMessage = "IMDB, năm và giá phải là số hợp lệ"
             return
         }
-        if (!includeInItem && !includeInUpcoming) {
+        if (!isNowShowing && !isUpComing) {
             errorMessage = "Chọn 1 trong 2"
             return
         }
@@ -149,72 +145,35 @@ fun AdminFilmFormScreen(
         errorMessage = null
         isSubmitting = true
 
-        var pending = 0
-        var hasError = false
-
-        fun onOneDone(success: Boolean) {
-            if (!success) hasError = true
-            pending -= 1
-            if (pending == 0) {
-                isSubmitting = false
-                if (hasError) {
-                    Toast.makeText(
-                        context, "Một phần thao tác thất bại, vui lòng kiểm tra lại",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    Toast.makeText(
-                        context, if (isEditing) "Đã lưu thay đổi" else "Đã thêm phim",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+        fun onDone(success: Boolean) {
+            isSubmitting = false
+            if (success) {
+                Toast.makeText(
+                    context, if (isEditing) "Đã lưu thay đổi" else "Đã thêm phim",
+                    Toast.LENGTH_SHORT
+                ).show()
                 onSaved()
-            }
-        }
-
-        fun submitFilm(call: Call<FilmItemModel>) {
-            pending++
-            call.enqueue(object : Callback<FilmItemModel> {
-                override fun onResponse(call: Call<FilmItemModel>, response: Response<FilmItemModel>) {
-                    onOneDone(response.isSuccessful)
-                }
-                override fun onFailure(call: Call<FilmItemModel>, t: Throwable) {
-                    onOneDone(false)
-                }
-            })
-        }
-
-        fun submitDelete(call: Call<Void>){
-            pending++
-            call.enqueue(object : Callback<Void>{
-                override fun onResponse(call: Call<Void>, response: Response<Void>){
-                    onOneDone(response.isSuccessful)
-                }
-                override fun onFailure(call: Call<Void>, t: Throwable){
-                    onOneDone(false)
-                }
-            })
-        }
-
-        if (includeInItem) {
-            if (existingItemId != null) {
-                submitFilm(api.updateItem(existingItemId, buildFilm(existingItemId)))
             } else {
-                submitFilm(api.addItem(buildFilm("")))
+                Toast.makeText(context, "Có lỗi xảy ra, vui lòng thử lại", Toast.LENGTH_SHORT)
+                    .show()
             }
-        } else if (existingItemId != null){
-            submitDelete(api.deleteItem(existingItemId))
         }
 
-        if (includeInUpcoming) {
-            if (existingUpcomingId != null) {
-                submitFilm(api.updateUpcomming(existingUpcomingId, buildFilm(existingUpcomingId)))
-            } else {
-                submitFilm(api.addUpcomming(buildFilm("")))
-            }
-        } else if (existingUpcomingId != null) {
-            submitDelete(api.deleteUpcomming(existingUpcomingId))
+        val call = if (isEditing) {
+            api.updateItem(existingFilm!!.id, buildFilm())
+        } else {
+            api.addItem(buildFilm())
         }
+
+        call.enqueue(object : Callback<FilmItemModel> {
+            override fun onResponse(call: Call<FilmItemModel>, response: Response<FilmItemModel>) {
+                onDone(response.isSuccessful)
+            }
+
+            override fun onFailure(call: Call<FilmItemModel>, t: Throwable) {
+                onDone(false)
+            }
+        })
     }
 
     val fieldColors = TextFieldDefaults.outlinedTextFieldColors(
@@ -258,13 +217,13 @@ fun AdminFilmFormScreen(
                 Spacer(modifier = Modifier.height(6.dp))
                 CheckboxRow(
                     label = "Phim đang chiếu",
-                    checked = includeInItem,
-                    onCheckedChange = { includeInItem = it }
+                    checked = isNowShowing,
+                    onCheckedChange = { isNowShowing = it }
                 )
                 CheckboxRow(
                     label = "Phim sắp chiếu",
-                    checked = includeInUpcoming,
-                    onCheckedChange = { includeInUpcoming = it }
+                    checked = isUpComing,
+                    onCheckedChange = { isUpComing = it }
                 )
                 if (isEditing){
                     Spacer(modifier = Modifier.height(6.dp))

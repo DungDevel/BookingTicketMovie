@@ -110,34 +110,12 @@ fun BookingHistoryScreen(
     }
 
     LaunchedEffect(Unit) {
-        val posters = mutableMapOf<String, String>()
-        var pending = 2
-
-        fun applyResult(films: List<FilmItemModel>?){
-            films?.forEach { posters[it.id] = it.Poster }
-            pending -= 1
-            if(pending == 0){
-                posterMap = posters
-            }
-        }
-
-        api.getItems().enqueue(object : Callback<List<FilmItemModel>>{
+        api.getFilms().enqueue(object : Callback<List<FilmItemModel>>{
             override fun onResponse(call: Call<List<FilmItemModel>>, response: Response<List<FilmItemModel>>){
-                applyResult(response.body())
+                posterMap = (response.body() ?: emptyList()).associate { it.id to it.Poster }
             }
-
             override fun onFailure(call: Call<List<FilmItemModel>>, t: Throwable){
-                applyResult(null)
-            }
-        })
-
-        api.getUpcoming().enqueue(object : Callback<List<FilmItemModel>>{
-            override fun onResponse(call: Call<List<FilmItemModel>>, response: Response<List<FilmItemModel>>){
-                applyResult(response.body())
-            }
-
-            override fun onFailure(call: Call<List<FilmItemModel>>, t: Throwable){
-                applyResult(null)
+                posterMap = emptyMap()
             }
         })
     }

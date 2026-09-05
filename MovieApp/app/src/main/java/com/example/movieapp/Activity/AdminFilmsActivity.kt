@@ -53,19 +53,7 @@ import java.text.NumberFormat
 import java.util.Locale
 import javax.inject.Inject
 
-object FilmSource {
-    const val ITEM  = "item"
-    const val UPCOMING = "upcoming"
-}
-
-data class AdminFilmRow(val film: FilmItemModel, val source: String)
-
-data class AdminFilmGroup(
-    val title: String,
-    val poster: String,
-    val price: Double,
-    val entries: List<AdminFilmRow>
-)
+enum class AdminFilmFilter { ALL, NOW_SHOWING, UPCOMING }
 
 @AndroidEntryPoint
 class AdminFilmsActivity : BaseActivity() {
@@ -85,15 +73,9 @@ class AdminFilmsActivity : BaseActivity() {
                 api = apiService,
                 onBackClick = { finish() },
                 onAddFilm = { startActivity(Intent(this, AdminFilmFormActivity::class.java)) },
-                onEditFilm = { group ->
-                    val itemEntry = group.entries.find { it.source == FilmSource.ITEM }
-                    val upcomingEntry = group.entries.find { it.source == FilmSource.UPCOMING }
-                    val filmForForm = itemEntry?.film ?: upcomingEntry?.film
-
+                onEditFilm = { film ->
                     val intent = Intent(this, AdminFilmFormActivity::class.java)
-                    intent.putExtra("film", filmForForm)
-                    intent.putExtra("itemId", itemEntry?.film?.id)
-                    intent.putExtra("upcomingId", upcomingEntry?.film?.id)
+                    intent.putExtra("film", film)
                     startActivity(intent)
                 }
             )
@@ -106,90 +88,52 @@ fun AdminFilmsScreen(
     api: ApiService,
     onBackClick: () -> Unit,
     onAddFilm: () -> Unit,
-    onEditFilm: (AdminFilmGroup) -> Unit
+    onEditFilm: (FilmItemModel) -> Unit
 ) {
     val context = LocalContext.current
-    var rows by remember { mutableStateOf<List<AdminFilmRow>>(emptyList()) }
+    var films by remember { mutableStateOf<List<FilmItemModel>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
-    var selectedFilter by remember { mutableStateOf<String?>(null)}
+    var selectedFilter by remember { mutableStateOf(AdminFilmFilter.ALL)}
 
     fun loadFilms() {
         isLoading = true
-        var itemResult: List<FilmItemModel>? = null
-        var upcomingResult: List<FilmItemModel>? = null
-        var pending = 2
 
-        fun tryFinish(){
-            pending -= 1
-            if (pending == 0){
-                isLoading = false
-                val merged = mutableListOf<AdminFilmRow>()
-                itemResult?.forEach { merged.add(AdminFilmRow(it, FilmSource.ITEM)) }
-                upcomingResult?.forEach { merged.add(AdminFilmRow(it, FilmSource.UPCOMING)) }
-                rows = merged
-            }
-        }
-
-        api.getItems().enqueue(object : Callback<List<FilmItemModel>> {
-            override fun onResponse(call: Call<List<FilmItemModel>>, response: Response<List<FilmItemModel>>) {
-                itemResult = response.body() ?: emptyList()
-                tryFinish()
-            }
-            override fun onFailure(call: Call<List<FilmItemModel>>, t: Throwable) {
-                itemResult = emptyList()
-                tryFinish()
-            }
-        })
-        api.getUpcoming().enqueue(object : Callback<List<FilmItemModel>>{
+        api.getFilms().enqueue(object : Callback<List<FilmItemModel>>{
             override fun onResponse(call: Call<List<FilmItemModel>>, response: Response<List<FilmItemModel>>){
-                upcomingResult = response.body() ?: emptyList()
-                tryFinish()
+                isLoading = false
+                films = response.body() ?: emptyList()
             }
             override fun onFailure(call: Call<List<FilmItemModel>>, t: Throwable){
-                upcomingResult = emptyList()
-                tryFinish()
+                isLoading = false
+                films = emptyList()
             }
         })
     }
 
     LaunchedEffect(Unit) { loadFilms() }
 
-    fun deleteFilm(row: AdminFilmRow) {
-        val call = if (row.source == FilmSource.ITEM){
-            api.deleteItem(row.film.id)
-        } else{
-            api.deleteUpcomming(row.film.id)
-        }
-        call.enqueue(object : Callback<Void>{
+    fun deleteFilm(film: FilmItemModel) {
+        api.deleteItem(film.id).enqueue(object : Callback<Void>{
             override fun onResponse(call: Call<Void>, response: Response<Void>){
                 if (response.isSuccessful){
                     Toast.makeText(context, "Đã xoá phim", Toast.LENGTH_SHORT).show()
                     loadFilms()
-                } else{
+                } else {
                     Toast.makeText(context, "Xoá thất bại", Toast.LENGTH_SHORT).show()
                 }
             }
             override fun onFailure(call: Call<Void>, t: Throwable){
-                Toast.makeText(context, "Lỗi kết nối: ${t.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Lỗi kết nối: ${t.message}", Toast.LENGTH_SHORT)
             }
         })
     }
 
-    val groups: List<AdminFilmGroup> = remember(rows, selectedFilter){
-        val base = if (selectedFilter == null) rows else rows.filter { it.source == selectedFilter }
-        base.groupBy { it.film.Title }
-            .map { (title, entries) ->
-                AdminFilmGroup(
-                    title = title,
-                    poster = entries.first().film.Poster,
-                    price = entries.first().film.price,
-                    entries = entries.sortedBy { it.source }
-                )
-            }
-    }
-
-    val filteredRows = remember(rows, selectedFilter) {
-        if (selectedFilter == null) rows else rows.filter { it.source == selectedFilter }
+    val filteredFilms = remember(films, selectedFilter) {
+        when (selectedFilter){
+            AdminFilmFilter.ALL -> films
+            AdminFilmFilter.NOW_SHOWING -> films.filter { it.IsNowShowing }
+            AdminFilmFilter.UPCOMING -> films.filter { it.IsUpComing }
+        }
     }
 
     Box(
@@ -233,18 +177,18 @@ fun AdminFilmsScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)){
                 FilterChip(
                     text = "Tất cả",
-                    selected = selectedFilter == null,
-                    onClick = { selectedFilter = null }
+                    selected = selectedFilter == AdminFilmFilter.ALL,
+                    onClick = { selectedFilter = AdminFilmFilter.ALL }
                 )
                 FilterChip(
                     text = "Đang chiếu",
-                    selected = selectedFilter == FilmSource.ITEM,
-                    onClick = { selectedFilter = FilmSource.ITEM }
+                    selected = selectedFilter == AdminFilmFilter.NOW_SHOWING,
+                    onClick = { selectedFilter = AdminFilmFilter.NOW_SHOWING }
                 )
                 FilterChip(
                     text = "Sắp chiếu",
-                    selected = selectedFilter == FilmSource.UPCOMING,
-                    onClick = { selectedFilter = FilmSource.UPCOMING }
+                    selected = selectedFilter == AdminFilmFilter.UPCOMING,
+                    onClick = { selectedFilter = AdminFilmFilter.UPCOMING }
                 )
             }
 
@@ -254,15 +198,15 @@ fun AdminFilmsScreen(
                 Box(modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = Color.White)
                 }
-            } else if (filteredRows.isEmpty()) {
+            } else if (filteredFilms.isEmpty()) {
                 Text(text = "Chưa có phim nào", color = Color.Gray, fontSize = 14.sp)
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(groups, key = { it.title }) { group ->
-                        FilmGroupRow(
-                            group = group,
-                            onEdit = { onEditFilm(group) },
-                            onDelete = { row -> deleteFilm(row) }
+                    items(filteredFilms, key = { it.id }) { film ->
+                        FilmRow(
+                            film = film,
+                            onEdit = { onEditFilm(film) },
+                            onDelete = { deleteFilm(film) }
                         )
                     }
                 }
@@ -272,12 +216,7 @@ fun AdminFilmsScreen(
 }
 
 @Composable
-private fun SourceBadge(source: String){
-    val (label, color) = if (source == FilmSource.ITEM){
-        "Đang chiếu" to Color(0xFF81C784)
-    } else {
-        "Sắp chiếu" to Color(0xFF64B5F6)
-    }
+private fun StatusBadge(text: String, color: Color){
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
@@ -285,7 +224,7 @@ private fun SourceBadge(source: String){
             .padding(horizontal = 8.dp, vertical = 2.dp)
     ){
         Text(
-            text = label,
+            text = text,
             color = color,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold
@@ -312,10 +251,10 @@ private fun FilterChip(text: String, selected: Boolean, onClick: () -> Unit){
 }
 
 @Composable
-private fun FilmGroupRow(
-    group: AdminFilmGroup,
+private fun FilmRow(
+    film: FilmItemModel,
     onEdit: () -> Unit,
-    onDelete: (AdminFilmRow) -> Unit
+    onDelete: () -> Unit
 ){
     Row(
         modifier = Modifier
@@ -326,7 +265,7 @@ private fun FilmGroupRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(
-            model = group.poster,
+            model = film.Poster,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -337,7 +276,7 @@ private fun FilmGroupRow(
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = group.title,
+                    text = film.Title,
                     color = Color.White,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -353,25 +292,33 @@ private fun FilmGroupRow(
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = NumberFormat.getNumberInstance(Locale("vi", "VN")).format(group.price),
+                text = NumberFormat.getNumberInstance(Locale("vi", "VN")).format(film.price),
                 color = Color(0xFFE57373),
                 fontSize = 13.sp
             )
             Spacer(modifier = Modifier.height(6.dp))
-            group.entries.forEach { entry ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(2.dp)
-                ) {
-                    SourceBadge(source = entry.source)
-                    Spacer(modifier = Modifier.width(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (film.IsNowShowing) {
+                        StatusBadge(
+                            text = "Đang chiếu",
+                            color = Color(0xFF81C784)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    if (film.IsUpComing) {
+                        StatusBadge(
+                            text = "Sắp chiếu",
+                            color = Color(0xFF64B5F6)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
                     Text(
                         text = "Xoá",
                         color = Color(0xFFE57373),
                         fontSize = 12.sp,
-                        modifier = Modifier.clickable{ onDelete(entry) }.padding(horizontal = 6.dp, vertical = 2.dp)
+                        modifier = Modifier.clickable{ onDelete() }.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
-                }
             }
         }
     }

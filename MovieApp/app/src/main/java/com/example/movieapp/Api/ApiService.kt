@@ -11,19 +11,7 @@ import retrofit2.http.*
 
 interface ApiService {
     @GET("Item")
-    fun getItems(): Call<List<FilmItemModel>>
-
-    @GET("Upcomming")
-    fun getUpcoming(): Call<List<FilmItemModel>>
-
-    @POST("Upcomming")
-    fun addUpcomming(@Body item: FilmItemModel): Call<FilmItemModel>
-
-    @PUT("Upcomming/{id}")
-    fun updateUpcomming(@Path("id") id: String, @Body item: FilmItemModel): Call<FilmItemModel>
-
-    @DELETE("Upcomming/{id}")
-    fun deleteUpcomming(@Path("id") id: String): Call<Void>
+    fun getFilms(): Call<List<FilmItemModel>>
 
     @POST("Item")
     fun addItem(@Body item: FilmItemModel): Call<FilmItemModel>

@@ -4,9 +4,9 @@ import android.icu.util.Calendar
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,8 +18,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -35,12 +35,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.example.movieapp.Api.ApiService
 import com.example.movieapp.Domain.AccountModel
 import com.example.movieapp.Domain.BookingModel
@@ -79,19 +82,13 @@ class AdminManageDashboardActivity : AppCompatActivity() {
             return
         }
         setContent {
-            AdminManageDashboardScreen(
-                api = apiService,
-                onBackClick = { finish() }
-            )
+            AdminManageDashboardScreen(apiService = apiService, onBackClick = { finish() })
         }
     }
 }
 
 @Composable
-fun AdminManageDashboardScreen(
-    api: ApiService,
-    onBackClick: () -> Unit
-){
+fun AdminManageDashboardScreen(apiService: ApiService, onBackClick: () -> Unit){
     var bookings by remember { mutableStateOf<List<BookingModel>>(emptyList()) }
     var totalFilmCount by remember { mutableStateOf(0) }
     var totalAccountCount by remember { mutableStateOf(0) }
@@ -100,14 +97,13 @@ fun AdminManageDashboardScreen(
 
     fun load(){
         isLoading = true
-        var pending = 4
+        var pending = 3
 
         fun tryFinsh(){
             pending -= 1
             if (pending == 0) isLoading = false
         }
-
-        api.getAllBookings().enqueue(object : Callback<List<BookingModel>>{
+        apiService.getAllBookings().enqueue(object : Callback<List<BookingModel>>{
             override fun onResponse(call: Call<List<BookingModel>>, response: Response<List<BookingModel>>){
                 bookings = response.body() ?: emptyList()
                 tryFinsh()
@@ -118,19 +114,12 @@ fun AdminManageDashboardScreen(
             }
         })
 
-        var itemFilms = emptyList<FilmItemModel>()
-        var updateFilms = emptyList<FilmItemModel>()
-
-        fun updateFilmCount(){
-            totalFilmCount = (itemFilms + updateFilms)
-                .distinctBy { it.id }
-                .size
-        }
-
-        api.getItems().enqueue(object : Callback<List<FilmItemModel>>{
+        // Giờ chỉ còn 1 collection phim duy nhất, nên tổng số phim là số bản ghi trả
+        // về thẳng từ đây, không cần cộng dồn Item+Upcoming như trước (vốn đếm trùng
+        // với những phim vừa "đang chiếu" vừa "sắp chiếu").
+        apiService.getFilms().enqueue(object : Callback<List<FilmItemModel>>{
             override fun onResponse(call: Call<List<FilmItemModel>>, response: Response<List<FilmItemModel>>){
-                itemFilms = response.body() ?: emptyList()
-                updateFilmCount()
+                totalFilmCount = response.body()?.size ?: 0
                 tryFinsh()
             }
             override fun onFailure(call: Call<List<FilmItemModel>>, t : Throwable){
@@ -138,18 +127,7 @@ fun AdminManageDashboardScreen(
             }
         })
 
-        api.getUpcoming().enqueue(object : Callback<List<FilmItemModel>>{
-            override fun onResponse(call: Call<List<FilmItemModel>>, response: Response<List<FilmItemModel>>){
-                updateFilms = response.body() ?: emptyList()
-                updateFilmCount()
-                tryFinsh()
-            }
-            override fun onFailure(call: Call<List<FilmItemModel>>, t: Throwable){
-                tryFinsh()
-            }
-        })
-
-        api.getAccounts().enqueue(object : Callback<List<AccountModel>>{
+        apiService.getAccounts().enqueue(object : Callback<List<AccountModel>>{
             override fun onResponse(call: Call<List<AccountModel>>, response: Response<List<AccountModel>>){
                 totalAccountCount = response.body()?.size ?: 0
                 tryFinsh()
@@ -216,7 +194,7 @@ fun AdminManageDashboardScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(colorResource(R.color.blackBackground))
-            .padding(top = 30.dp, start = 16.dp, end = 16.dp)
+            .padding(top = 48.dp, start = 16.dp, end = 16.dp)
     ) {
         Column(
             modifier = Modifier
@@ -225,13 +203,18 @@ fun AdminManageDashboardScreen(
                 .padding(bottom = 32.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    contentDescription = "",
-                    painter = painterResource(R.drawable.back),
-                    modifier = Modifier.clickable { onBackClick() }
+                Text(
+                    text = "<-",
+                    color = Color.White,
+                    fontSize = 22.sp,
+                    modifier = Modifier.clickable{ onBackClick() }.padding(end = 12.dp)
                 )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(text = "Thống kê doanh thu", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Thống Kê Doanh Thu",
+                    color = Color.White,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
             Spacer(modifier = Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -286,7 +269,7 @@ fun AdminManageDashboardScreen(
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                RevenueLineChart(data = last7DaysRevenue)
+                RevenueLineChart(data = last7DaysRevenue, currency = currency)
 
                 Spacer(modifier = Modifier.height(28.dp))
                 Text(
@@ -355,7 +338,7 @@ private fun StatCard(
             .background(Color(0xFF1E1E1E))
             .padding(14.dp)
     ) {
-        Text(text = title, color = Color.Gray, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Text(text = title, color = Color.Gray, fontSize = 12.sp)
         Spacer(modifier = Modifier.height(6.dp))
         Text(text = value, color = Color.White, fontSize = 18.sp)
     }
@@ -404,22 +387,43 @@ private fun TopFilmBar(title: String, revenue: Double, tickets: Int, ratio: Floa
         Text(
             text = "${currency.format(revenue)} đ",
             color = Color(0xFFE57373),
-            fontSize = 12.sp
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold
         )
     }
 }
 
 @Composable
-private fun RevenueLineChart(data: List<Pair<String, Double>>){
+private fun RevenueLineChart(data: List<Pair<String, Double>>, currency: NumberFormat){
     val maxVal = (data.maxOfOrNull { it.second } ?: 0.0).coerceAtLeast(1.0)
+
+    val labelPaintCenter = remember {
+        android.graphics.Paint().apply {
+            color = android.graphics.Color.WHITE
+            textSize = 26f
+            textAlign = android.graphics.Paint.Align.CENTER
+            isAntiAlias = true
+        }
+    }
+    val labelPaintLeft = remember {
+        android.graphics.Paint(labelPaintCenter).apply {
+            textAlign = android.graphics.Paint.Align.LEFT
+        }
+    }
+    val labelPaintRight = remember {
+        android.graphics.Paint(labelPaintCenter).apply {
+            textAlign = android.graphics.Paint.Align.RIGHT
+        }
+    }
+
     Column {
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(160.dp)
+                .height(200.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(Color(0xFF1E1E1E))
-                .padding(12.dp)
+                .padding(top = 30.dp, start = 12.dp, end = 12.dp, bottom = 30.dp)
         ){
             if (data.size < 2) return@Canvas
             val stepX = size.width / (data.size - 1)
@@ -428,20 +432,50 @@ private fun RevenueLineChart(data: List<Pair<String, Double>>){
                 val y = size.height - (pair.second / maxVal * size.height).toFloat()
                 Offset(x, y)
             }
+
             for (i in 0 until points.size - 1){
                 drawLine(
                     color = Color(0xFFE57373),
                     start = points[i],
-                    end = points[i+1],
+                    end = points[i + 1],
                     strokeWidth = 4f
                 )
             }
-            points.forEach { p ->
+
+            points.forEachIndexed { index, p ->
                 drawCircle(
                     color = Color(0xFFE57373),
                     radius = 6f,
                     center = p
                 )
+
+                val cur = data[index].second
+                val prev = if (index > 0) data[index - 1].second else null
+                val next = if (index < data.size - 1) data[index + 1].second else null
+
+                val isPeakLike = (prev == null || cur >= prev) && (next == null || cur >= next)
+
+                val revenueText = currency.format(cur)
+                val paint = when (index) {
+                    0 -> labelPaintLeft
+                    data.size - 1 -> labelPaintRight
+                    else -> labelPaintCenter
+                }
+                val textX = when (index) {
+                    0 -> p.x
+                    data.size - 1 -> p.x
+                    else -> p.x
+                }
+
+                val textY = if (isPeakLike) {
+                    // Đỉnh: nhãn ở trên điểm
+                    (p.y - 16f).coerceAtLeast(paint.textSize)
+                } else {
+                    // Đáy: nhãn ở dưới điểm
+                    (p.y + 16f + paint.textSize).coerceAtMost(size.height)
+                }
+
+                drawContext.canvas.nativeCanvas.drawText(revenueText, textX, textY, paint)
             }
         }
         Spacer(modifier = Modifier.height(6.dp))
@@ -459,26 +493,3 @@ private fun RevenueLineChart(data: List<Pair<String, Double>>){
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

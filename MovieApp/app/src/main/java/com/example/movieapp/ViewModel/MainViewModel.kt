@@ -13,10 +13,6 @@ class MainViewModel @Inject constructor(
 ): ViewModel(){
 
     fun loadUpcoming(): LiveData<MutableList<FilmItemModel>>{
-        return repository.loadUpcoming()
-    }
-
-    fun loadItems(): LiveData<MutableList<FilmItemModel>>{
-        return repository.loadItems()
+        return repository.loadFilms()
     }
 }

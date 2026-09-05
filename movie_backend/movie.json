@@ -34,7 +34,9 @@
       "Title": "Bad Boys",
       "Trailer": "https://www.imdb.com/video/vi3000682009/?playlistId=tt4919268&ref_=tt_ov_vi",
       "Year": 2024,
-      "id": "UAjkx44viK8"
+      "id": "UAjkx44viK8",
+      "IsNowShowing": true,
+      "IsUpcoming": false
     },
     {
       "Casts": [
@@ -68,7 +70,9 @@
       "Title": "Dune: Part Two",
       "Trailer": "https://www.imdb.com/video/vi3332425241/?playlistId=tt15239678&ref_=tt_pr_ov_vi",
       "Year": 2024,
-      "id": "2Z7hEAb1iu4"
+      "id": "2Z7hEAb1iu4",
+      "IsNowShowing": true,
+      "IsUpcoming": false
     },
     {
       "Casts": [
@@ -100,7 +104,9 @@
       "Title": "Ordinary Angels",
       "Trailer": "https://www.imdb.com/video/vi3745105689/?ref_=tt_vi_i_2",
       "Year": 2024,
-      "id": "4CE_IMdfDEU"
+      "id": "4CE_IMdfDEU",
+      "IsNowShowing": true,
+      "IsUpcoming": false
     },
     {
       "Casts": [
@@ -134,7 +140,9 @@
       "Title": "The Fall Guy",
       "Trailer": "https://www.imdb.com/video/vi1681377049/?ref_=ttvi_vi_imdb_21",
       "Year": 2024,
-      "id": "P8oBo_L__4g"
+      "id": "P8oBo_L__4g",
+      "IsNowShowing": true,
+      "IsUpcoming": false
     },
     {
       "Casts": [
@@ -162,13 +170,15 @@
         "Sci-Fi"
       ],
       "Imdb": 9,
-      "price": 120,
+      "IsNowShowing": false,
+      "IsUpComing": true,
       "Poster": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592037/rebel_moon.jpg",
       "Time": "2h 22m",
       "Title": "Rebel Moon",
       "Trailer": "https://www.youtube.com/watch?v=UEJuNHOd8Dw",
       "Year": 2023,
-      "id": "sUlRSv1Qy5g"
+      "id": "sUlRSv1Qy5g",
+      "price": 120
     },
     {
       "Casts": [
@@ -201,7 +211,9 @@
       "Title": "Immaculate",
       "Trailer": "https://www.youtube.com/watch?v=ewxS9Z-XXYo",
       "Year": 2023,
-      "id": "B6NvFb8Xqgw"
+      "id": "B6NvFb8Xqgw",
+      "IsNowShowing": true,
+      "IsUpcoming": true
     },
     {
       "Casts": [
@@ -235,7 +247,9 @@
       "Title": "Godzilla-Kong",
       "Trailer": "https://www.youtube.com/watch?v=qqrpMRDuPfc",
       "Year": 2023,
-      "id": "cpX9bjTeLLI"
+      "id": "cpX9bjTeLLI",
+      "IsNowShowing": true,
+      "IsUpcoming": true
     },
     {
       "Casts": [
@@ -268,7 +282,9 @@
       "Title": "Kung Fu Panda 4",
       "Trailer": "https://www.youtube.com/watch?v=_inKs4eeHiI",
       "Year": 2024,
-      "id": "8xLhj3gEBbM"
+      "id": "8xLhj3gEBbM",
+      "IsNowShowing": true,
+      "IsUpcoming": true
     },
     {
       "Casts": [
@@ -301,7 +317,9 @@
       "Title": "The Three Musketeers",
       "Trailer": "https://www.youtube.com/watch?v=FsuJMqePZtg",
       "Year": 2023,
-      "id": "H-wQcyYwkgc"
+      "id": "H-wQcyYwkgc",
+      "IsNowShowing": true,
+      "IsUpcoming": true
     },
     {
       "Casts": [
@@ -334,7 +352,9 @@
       "Title": "Damaged",
       "Trailer": "https://www.youtube.com/watch?v=Sg8NuJL5P_8",
       "Year": 2023,
-      "id": "z8R8y77s0qQ"
+      "id": "z8R8y77s0qQ",
+      "IsNowShowing": true,
+      "IsUpcoming": true
     },
     {
       "Casts": [],
@@ -349,10 +369,10 @@
       "Trailer": "https://www.youtube.com/watch?v=8jv-s509E-A",
       "Year": 2019,
       "id": "S5v_G70Z4lw",
-      "price": 170000
-    }
-  ],
-  "Upcomming": [
+      "price": 170000,
+      "IsNowShowing": true,
+      "IsUpcoming": true
+    },
     {
       "Casts": [
         {
@@ -384,7 +404,9 @@
       "Title": "Fly Me to the Moon",
       "Trailer": "https://www.imdb.com/video/vi2956707353/?playlistId=tt1896747&ref_=tt_ov_vi",
       "Year": 2024,
-      "id": "EcUGQO1pFe8"
+      "id": "EcUGQO1pFe8",
+      "IsNowShowing": false,
+      "IsUpcoming": true
     },
     {
       "Casts": [
@@ -419,174 +441,9 @@
       "Title": "Atlas",
       "Trailer": "https://www.imdb.com/video/vi1105249817/?playlistId=tt14856980&ref_=tt_pr_ov_vi",
       "Year": 2024,
-      "id": "M1IY1QK_VOs"
-    },
-    {
-      "Casts": [
-        {
-          "Actor": "Fran ois Civil",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592189/Vincent-Cassel.png"
-        },
-        {
-          "Actor": "Vincent Cassel",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592189/Vincent-Cassel.png"
-        },
-        {
-          "Actor": "Romain Duris",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592185/Romain-Duris.png"
-        },
-        {
-          "Actor": "Pio Marma ",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592185/Romain-Duris.png"
-        }
-      ],
-      "Description": "A young man named D'Artagnan travels to Paris to become a musketeer and joins forces with Athos, Porthos, and Aramis to stop a plot to overthrow the king.",
-      "Genre": [
-        "Action",
-        "Adventure"
-      ],
-      "Imdb": 8.2,
-      "price": 120,
-      "Poster": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592036/three_musketern.jpg",
-      "Time": "2h 7m",
-      "Title": "The Three Musketeers",
-      "Trailer": "https://www.youtube.com/watch?v=FsuJMqePZtg",
-      "Year": 2023,
-      "id": "S0GuzEkOcSI"
-    },
-    {
-      "Casts": [
-        {
-          "Actor": "Samuel L. Jackson",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592186/Samuel-L.-Jackson.png"
-        },
-        {
-          "Actor": "Vincent Cassel",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592189/Vincent-Cassel.png"
-        },
-        {
-          "Actor": "Gianni Capaldi",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592180/Gianni-Capaldi.png"
-        },
-        {
-          "Actor": "Laura Haddock",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592183/Laura-Haddock.png"
-        }
-      ],
-      "Description": "A war veteran struggling with PTSD seeks revenge on the people who killed his family.",
-      "Genre": [
-        "Action",
-        "Thriller"
-      ],
-      "Imdb": 8.6,
-      "price": 120,
-      "Poster": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592192/damaged.jpg",
-      "Time": "1h 54m",
-      "Title": "Damaged",
-      "Trailer": "https://www.youtube.com/watch?v=Sg8NuJL5P_8",
-      "Year": 2023,
-      "id": "_dbBdhrtR5Y"
-    },
-    {
-      "Casts": [
-        {
-          "Actor": "Sofia Boutella",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592187/Sofia-Boutella.png"
-        },
-        {
-          "Actor": "Ed Skrein",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592066/Ed-Skrein.png"
-        },
-        {
-          "Actor": "Michiel Huisman",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592184/Michiel-Huisman.png"
-        },
-        {
-          "Actor": "Djimon Hounsou",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592039/Djimon-Hounsou.png"
-        }
-      ],
-      "Description": "A young woman with a mysterious past is tasked with uniting different tribes to fight against an oppressive warlord who threatens their peaceful colony.",
-      "Genre": [
-        "Adventure",
-        "Action",
-        "Sci-Fi"
-      ],
-      "Imdb": 9,
-      "price": 120,
-      "Poster": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592037/rebel_moon.jpg",
-      "Time": "2h 22m",
-      "Title": "Rebel Moon",
-      "Trailer": "https://www.youtube.com/watch?v=UEJuNHOd8Dw",
-      "Year": 2023,
-      "id": "RlwmtWe_VN0"
-    },
-    {
-      "Casts": [
-        {
-          "Actor": "Sydney Sweeney",
-          "PicUrl": "https://firebasestorage.googleapis.com/v0/b/project182-1.appspot.com/o/Sydney-Sweeney.png?alt=media&token=c8cecc39-ffbb-4893-9993-182c8078055a"
-        },
-        {
-          "Actor": " lvaro Morte",
-          "PicUrl": "https://firebasestorage.googleapis.com/v0/b/project182-1.appspot.com/o/Alvaro-Morte.png?alt=media&token=23a796f0-ad84-4332-83f3-2282eb9ee1bb"
-        },
-        {
-          "Actor": "Simona Tabasco",
-          "PicUrl": "https://firebasestorage.googleapis.com/v0/b/project182-1.appspot.com/o/Simona-Tabasco.png?alt=media&token=2817ec96-323e-4b69-a129-cfbc121159e3"
-        },
-        {
-          "Actor": "Benedetta Porcaroli",
-          "PicUrl": "https://firebasestorage.googleapis.com/v0/b/project182-1.appspot.com/o/Benedetta-Porcaroli.png?alt=media&token=e1038e80-48ce-43af-9346-d3073cca74df"
-        }
-      ],
-      "Description": "A young woman who possesses the ability to heal others must fight to protect her gift from those who would exploit it.",
-      "Genre": [
-        "Drama",
-        "Fantasy"
-      ],
-      "Imdb": 8.3,
-      "price": 120,
-      "Poster": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592036/immaculate.jpg",
-      "Time": "1h 36m",
-      "Title": "Immaculate",
-      "Trailer": "https://www.youtube.com/watch?v=ewxS9Z-XXYo",
-      "Year": 2023,
-      "id": "bb965OTZDaw"
-    },
-    {
-      "Casts": [
-        {
-          "Actor": "Rebecca Hall",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592185/Rebecca-Hall.png"
-        },
-        {
-          "Actor": "Brian Tyree Henry",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592038/Brian-Tyree-Henry.png"
-        },
-        {
-          "Actor": "Dan Stevens",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592038/Dan-Stevens.png"
-        },
-        {
-          "Actor": "Kaylee Hottle",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592182/Kaylee-Hottle.png"
-        }
-      ],
-      "Description": "Godzilla and Kong must team up to battle a common enemy that threatens to destroy both of their worlds.",
-      "Genre": [
-        "Action",
-        "Adventure",
-        "Sci-Fi"
-      ],
-      "Imdb": 8.5,
-      "price": 120,
-      "Poster": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592193/godzila.jpg",
-      "Time": "1h 56m",
-      "Title": "Godzilla-Kong",
-      "Trailer": "https://www.youtube.com/watch?v=qqrpMRDuPfc",
-      "Year": 2023,
-      "id": "tjxGTOoexZw"
+      "id": "M1IY1QK_VOs",
+      "IsNowShowing": false,
+      "IsUpcoming": true
     },
     {
       "Casts": [
@@ -619,55 +476,9 @@
       "Title": "No Way Up",
       "Trailer": "https://www.youtube.com/watch?v=PSEoAaSswgo",
       "Year": 2023,
-      "id": "Ifgn4QtL39I"
-    },
-    {
-      "Casts": [
-        {
-          "Actor": "Jack Black",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592180/Jack-Black.png"
-        },
-        {
-          "Actor": "Awkwafina",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592038/Awkwafina.png"
-        },
-        {
-          "Actor": "Viola Davis",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592190/Viola-Davis.png"
-        },
-        {
-          "Actor": "Djimon Hounsou",
-          "PicUrl": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592039/Djimon-Hounsou.png"
-        }
-      ],
-      "Description": "Po and the Furious Five must once again defend the Jade Palace from a new threat.",
-      "Genre": [
-        "Thriller",
-        "Drama"
-      ],
-      "Imdb": 7.5,
-      "price": 120,
-      "Poster": "https://res.cloudinary.com/vuyb39ll/image/upload/v1786592036/kung_fo_panda.jpg",
-      "Time": "1h 42m",
-      "Title": "Kung Fu Panda 4",
-      "Trailer": "https://www.youtube.com/watch?v=_inKs4eeHiI",
-      "Year": 2024,
-      "id": "42Zbq30L2fI"
-    },
-    {
-      "Casts": [],
-      "Description": "Phim Harry Poster",
-      "Genre": [
-        "Phep thuat"
-      ],
-      "Imdb": 8,
-      "Poster": "https://res.cloudinary.com/vuyb39ll/image/upload/v1787822339/philosophers-stone-20-years-of-movie-magic-harry-poster.jpg",
-      "Time": "115",
-      "Title": "Harrry Poster",
-      "Trailer": "https://www.youtube.com/watch?v=8jv-s509E-A",
-      "Year": 2019,
-      "id": "-0MGO_C7k_g",
-      "price": 170000
+      "id": "Ifgn4QtL39I",
+      "IsNowShowing": false,
+      "IsUpcoming": true
     },
     {
       "Casts": [
@@ -700,7 +511,9 @@
       "Trailer": "https://www.youtube.com/watch?v=Y0qlXpVqeSc",
       "Year": 2025,
       "id": "tMOlj1HtGsk",
-      "price": 170000
+      "price": 170000,
+      "IsNowShowing": false,
+      "IsUpcoming": true
     }
   ],
   "Account": [
@@ -1373,22 +1186,82 @@
     },
     {
       "accountId": "S5WyvWXWxB4",
-      "createdAt": 1788513531889,
-      "date": "2026-09-04",
-      "filmId": "2Z7hEAb1iu4",
-      "filmTitle": "Dune: Part Two",
-      "id": "-VdIT2qSkF8",
+      "createdAt": 1788579750525,
+      "date": "2026-09-05",
+      "filmId": "4CE_IMdfDEU",
+      "filmTitle": "Ordinary Angels",
+      "id": "QxGPjelShmA",
+      "seats": [
+        "C3",
+        "C4",
+        "C5"
+      ],
+      "status": "confirmed",
+      "time": "12:00",
+      "totalPrice": 225000
+    },
+    {
+      "accountId": "S5WyvWXWxB4",
+      "createdAt": 1788580353338,
+      "date": "2026-09-05",
+      "filmId": "B6NvFb8Xqgw",
+      "filmTitle": "Immaculate",
+      "id": "UeHZIoyn890",
       "seats": [
         "B4",
         "B5",
-        "C3",
+        "B6",
+        "B7",
         "C4",
-        "D5",
-        "D6"
+        "C5",
+        "C6",
+        "C7"
       ],
       "status": "confirmed",
-      "time": "18:00",
-      "totalPrice": 450000
+      "time": "12:00",
+      "totalPrice": 600000
+    },
+    {
+      "accountId": "S5WyvWXWxB4",
+      "createdAt": 1788580393338,
+      "date": "2026-09-05",
+      "filmId": "sUlRSv1Qy5g",
+      "filmTitle": "Rebel Moon",
+      "id": "1HUZdpkfTpc",
+      "seats": [
+        "A1",
+        "B1",
+        "B2",
+        "C1",
+        "C3",
+        "D1",
+        "E1",
+        "F1"
+      ],
+      "status": "confirmed",
+      "time": "12:00",
+      "totalPrice": 670000
+    },
+    {
+      "accountId": "S5WyvWXWxB4",
+      "createdAt": 1788580425557,
+      "date": "2026-09-05",
+      "filmId": "sUlRSv1Qy5g",
+      "filmTitle": "Rebel Moon",
+      "id": "i3ovBqrEMnM",
+      "seats": [
+        "A6",
+        "B6",
+        "C6",
+        "D4",
+        "D6",
+        "E5",
+        "E6",
+        "F6"
+      ],
+      "status": "confirmed",
+      "time": "12:00",
+      "totalPrice": 705000
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"
