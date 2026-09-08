@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.movieapp.Domain.FilmItemModel
+import com.example.movieapp.Utils.ReleaseCountdownUtils
 
 @Composable
 fun FilmItem(item: FilmItemModel, onItemClick:(FilmItemModel) -> Unit){
@@ -45,24 +46,36 @@ fun FilmItem(item: FilmItemModel, onItemClick:(FilmItemModel) -> Unit){
         Text(
             text = item.Title,
             modifier = Modifier.padding(4.dp),
-            style = TextStyle(color = Color.White, fontSize = 11.sp),
+            style = TextStyle(color = Color.White, fontSize = 15.sp),
             maxLines = 1
         )
         Spacer(modifier = Modifier.height(4.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Star,
-                contentDescription = null,
-                tint = Color(0xffffc107)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
+
+        val countdownText = if (item.IsUpcoming) ReleaseCountdownUtils.getCountdownText(item.ReleaseAt) else null
+
+        if (countdownText != null) {
             Text(
-                text = item.Imdb.toString(),
-                style = TextStyle(color = Color.White, fontSize = 12.sp)
+                text = countdownText,
+                modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 4.dp),
+                style = TextStyle(color = Color(0xff64B5F6), fontSize = 15.sp),
+                maxLines = 1
             )
+        } else {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Star,
+                    contentDescription = null,
+                    tint = Color(0xffffc107)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = item.Imdb.toString(),
+                    style = TextStyle(color = Color.White, fontSize = 12.sp)
+                )
+            }
         }
     }
 }

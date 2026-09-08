@@ -126,7 +126,7 @@ fun MainContent(onItemClick: (FilmItemModel) -> Unit){
     }
 
     val newMoview = remember(allFilms.toList()) { allFilms.filter { it.IsNowShowing }}
-    val upcoming = remember(allFilms.toList()) { allFilms.filter { it.IsUpComing } }
+    val upcoming = remember(allFilms.toList()) { allFilms.filter { it.IsUpcoming } }
     val showNewMoviesLoading = isLoadingFilms
     val showUpcomingLoad = isLoadingFilms
 

@@ -406,14 +406,10 @@ private fun RevenueLineChart(data: List<Pair<String, Double>>, currency: NumberF
         }
     }
     val labelPaintLeft = remember {
-        android.graphics.Paint(labelPaintCenter).apply {
-            textAlign = android.graphics.Paint.Align.LEFT
-        }
+        android.graphics.Paint(labelPaintCenter).apply { textAlign = android.graphics.Paint.Align.LEFT }
     }
     val labelPaintRight = remember {
-        android.graphics.Paint(labelPaintCenter).apply {
-            textAlign = android.graphics.Paint.Align.RIGHT
-        }
+        android.graphics.Paint(labelPaintCenter).apply { textAlign = android.graphics.Paint.Align.RIGHT }
     }
 
     Column {
@@ -423,13 +419,19 @@ private fun RevenueLineChart(data: List<Pair<String, Double>>, currency: NumberF
                 .height(200.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(Color(0xFF1E1E1E))
-                .padding(top = 30.dp, start = 12.dp, end = 12.dp, bottom = 30.dp)
+                .padding(horizontal = 12.dp)
         ){
             if (data.size < 2) return@Canvas
+
+            val labelSpace = labelPaintCenter.textSize + 20f
+            val chartTop = labelSpace
+            val chartBottom = size.height - labelSpace
+            val chartHeight = (chartBottom - chartTop).coerceAtLeast(1f)
+
             val stepX = size.width / (data.size - 1)
             val points = data.mapIndexed { index, pair ->
                 val x = index * stepX
-                val y = size.height - (pair.second / maxVal * size.height).toFloat()
+                val y = chartBottom - (pair.second / maxVal * chartHeight).toFloat()
                 Offset(x, y)
             }
 
@@ -443,16 +445,11 @@ private fun RevenueLineChart(data: List<Pair<String, Double>>, currency: NumberF
             }
 
             points.forEachIndexed { index, p ->
-                drawCircle(
-                    color = Color(0xFFE57373),
-                    radius = 6f,
-                    center = p
-                )
+                drawCircle(color = Color(0xFFE57373), radius = 6f, center = p)
 
                 val cur = data[index].second
                 val prev = if (index > 0) data[index - 1].second else null
                 val next = if (index < data.size - 1) data[index + 1].second else null
-
                 val isPeakLike = (prev == null || cur >= prev) && (next == null || cur >= next)
 
                 val revenueText = currency.format(cur)
@@ -461,21 +458,14 @@ private fun RevenueLineChart(data: List<Pair<String, Double>>, currency: NumberF
                     data.size - 1 -> labelPaintRight
                     else -> labelPaintCenter
                 }
-                val textX = when (index) {
-                    0 -> p.x
-                    data.size - 1 -> p.x
-                    else -> p.x
-                }
 
                 val textY = if (isPeakLike) {
-                    // Đỉnh: nhãn ở trên điểm
-                    (p.y - 16f).coerceAtLeast(paint.textSize)
+                    p.y - 16f
                 } else {
-                    // Đáy: nhãn ở dưới điểm
-                    (p.y + 16f + paint.textSize).coerceAtMost(size.height)
+                    p.y + 16f + paint.textSize
                 }
 
-                drawContext.canvas.nativeCanvas.drawText(revenueText, textX, textY, paint)
+                drawContext.canvas.nativeCanvas.drawText(revenueText, p.x, textY, paint)
             }
         }
         Spacer(modifier = Modifier.height(6.dp))
@@ -484,11 +474,7 @@ private fun RevenueLineChart(data: List<Pair<String, Double>>, currency: NumberF
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             data.forEach { (label, _) ->
-                Text(
-                    text = label,
-                    color = Color.Gray,
-                    fontSize = 10.sp
-                )
+                Text(text = label, color = Color.Gray, fontSize = 10.sp)
             }
         }
     }

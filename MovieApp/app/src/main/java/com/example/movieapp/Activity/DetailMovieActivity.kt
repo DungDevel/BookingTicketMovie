@@ -63,6 +63,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.movieapp.Utils.FavoriteManager
+import com.example.movieapp.Utils.ReleaseCountdownUtils
 import com.example.movieapp.ViewModel.ReviewViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
@@ -183,6 +184,36 @@ fun DetailScreen(film: FilmItemModel, onBackClick:() -> Unit){
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                    if (film.IsUpcoming) {
+                        val countdownText = ReleaseCountdownUtils.getCountdownText(film.ReleaseAt)
+                        val releaseDateText = ReleaseCountdownUtils.formatReleaseDate(film.ReleaseAt)
+                        if (countdownText != null) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0x3364B5F6))
+                                    .padding(horizontal = 14.dp, vertical = 10.dp)
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "$countdownText",
+                                        color = Color(0xFF64B5F6),
+                                        fontSize = 15.sp
+                                    )
+                                    if (releaseDateText != null) {
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "Khởi chiếu: $releaseDateText",
+                                            color = Color(0xFFBDBDBD),
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(14.dp))
+                        }
+                    }
                     Row(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
@@ -214,7 +245,6 @@ fun DetailScreen(film: FilmItemModel, onBackClick:() -> Unit){
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // ---- Tóm tắt đánh giá & bình luận, bấm để mở màn hình đầy đủ ----
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

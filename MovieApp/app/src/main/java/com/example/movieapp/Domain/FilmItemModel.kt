@@ -15,5 +15,6 @@ data class FilmItemModel(
     var Genre: ArrayList<String> = ArrayList(),
     var Casts: ArrayList<CastModel> = ArrayList(),
     var IsNowShowing: Boolean = true,
-    var IsUpComing: Boolean = false
+    var IsUpcoming: Boolean = false,
+    var ReleaseAt: Long? = null
 ): Serializable

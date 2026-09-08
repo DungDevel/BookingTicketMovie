@@ -1,15 +1,15 @@
 {
-  "name": "movie_backend",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "json-server": "^1.0.0-beta.15"
-  }
+    "name": "movieapp-backend",
+    "version": "1.0.0",
+    "description": "Rest API",
+    "main": "src/server.js",
+    "scripts": {
+        "start": "node src/server.js"
+    },
+    "dependencies": {
+        "cors": "^2.8.5",
+        "express": "^5.2.1",
+        "mssql": "^12.7.0",
+        "nanoid": "^6.0.1"
+    }
 }

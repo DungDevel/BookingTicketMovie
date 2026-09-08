@@ -1,5 +1,7 @@
 package com.example.movieapp.Activity
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.compose.setContent
@@ -49,11 +51,13 @@ import com.example.movieapp.Api.ApiService
 import com.example.movieapp.Domain.CastModel
 import com.example.movieapp.Domain.FilmItemModel
 import com.example.movieapp.R
+import com.example.movieapp.Utils.ReleaseCountdownUtils
 import com.example.movieapp.Utils.SessionManager
 import dagger.hilt.android.AndroidEntryPoint
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.util.Calendar
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -105,7 +109,8 @@ fun AdminFilmFormScreen(
     var castList by remember { mutableStateOf(existingFilm?.Casts?.toList() ?: emptyList()) }
 
     var isNowShowing by remember { mutableStateOf(existingFilm?.IsNowShowing ?: true) }
-    var isUpComing by remember { mutableStateOf(existingFilm?.IsUpComing ?: false) }
+    var isUpcoming by remember { mutableStateOf(existingFilm?.IsUpcoming ?: false) }
+    var releaseAt by remember { mutableStateOf(existingFilm?.ReleaseAt) }
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
@@ -124,7 +129,8 @@ fun AdminFilmFormScreen(
             Genre = ArrayList(genre.split(",").map { it.trim() }.filter { it.isNotBlank() }),
             Casts = ArrayList(castList),
             IsNowShowing = isNowShowing,
-            IsUpComing = isUpComing
+            IsUpcoming = isUpcoming,
+            ReleaseAt = releaseAt
         )
     }
 
@@ -137,8 +143,12 @@ fun AdminFilmFormScreen(
             errorMessage = "IMDB, năm và giá phải là số hợp lệ"
             return
         }
-        if (!isNowShowing && !isUpComing) {
+        if (!isNowShowing && !isUpcoming) {
             errorMessage = "Chọn 1 trong 2"
+            return
+        }
+        if (isUpcoming && releaseAt == null) {
+            errorMessage = "Vui lòng chọn thời gian phim sẽ chiếu"
             return
         }
 
@@ -222,9 +232,16 @@ fun AdminFilmFormScreen(
                 )
                 CheckboxRow(
                     label = "Phim sắp chiếu",
-                    checked = isUpComing,
-                    onCheckedChange = { isUpComing = it }
+                    checked = isUpcoming,
+                    onCheckedChange = { isUpcoming = it }
                 )
+                if (isUpcoming) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    ReleaseDateTimePicker(
+                        releaseAt = releaseAt,
+                        onReleaseAtChange = { releaseAt = it }
+                    )
+                }
                 if (isEditing){
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
@@ -397,11 +414,77 @@ private fun CheckboxRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = CheckboxDefaults.colors(checkedColor = Color(0xFFE57373),
-            uncheckedColor = Color.Gray
+                uncheckedColor = Color.Gray
             )
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(text = label, color = Color.White, fontSize = 14.sp)
+    }
+}
+
+@Composable
+private fun ReleaseDateTimePicker(
+    releaseAt: Long?,
+    onReleaseAtChange: (Long) -> Unit
+) {
+    val context = LocalContext.current
+
+    fun openPickers() {
+        val calendar = Calendar.getInstance()
+        if (releaseAt != null) calendar.timeInMillis = releaseAt
+
+        val year = calendar.get(Calendar.YEAR)
+        val month = calendar.get(Calendar.MONTH)
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+        val minute = calendar.get(Calendar.MINUTE)
+
+        DatePickerDialog(
+            context,
+            { _, pickedYear, pickedMonth, pickedDay ->
+                TimePickerDialog(
+                    context,
+                    { _, pickedHour, pickedMinute ->
+                        val result = Calendar.getInstance().apply {
+                            set(pickedYear, pickedMonth, pickedDay, pickedHour, pickedMinute, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }
+                        onReleaseAtChange(result.timeInMillis)
+                    },
+                    hour, minute, true
+                ).show()
+            },
+            year, month, day
+        ).show()
+    }
+
+    Column {
+        Text(text = "Thời gian phim sẽ chiếu", color = Color(0xFFBDBDBD), fontSize = 12.sp)
+        Spacer(modifier = Modifier.height(6.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(colorResource(R.color.black1), RoundedCornerShape(10.dp))
+                .clickable { openPickers() }
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = ReleaseCountdownUtils.formatReleaseDate(releaseAt) ?: "Chạm để chọn ngày & giờ",
+                color = if (releaseAt != null) Color.White else Color.Gray,
+                fontSize = 14.sp
+            )
+            Text(text = "Chọn", color = Color(0xFFE57373), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        }
+        if (releaseAt != null) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = ReleaseCountdownUtils.getCountdownText(releaseAt) ?: "",
+                color = Color(0xFF64B5F6),
+                fontSize = 12.sp
+            )
+        }
     }
 }
 

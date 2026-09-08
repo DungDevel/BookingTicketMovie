@@ -132,7 +132,7 @@ fun AdminFilmsScreen(
         when (selectedFilter){
             AdminFilmFilter.ALL -> films
             AdminFilmFilter.NOW_SHOWING -> films.filter { it.IsNowShowing }
-            AdminFilmFilter.UPCOMING -> films.filter { it.IsUpComing }
+            AdminFilmFilter.UPCOMING -> films.filter { it.IsUpcoming }
         }
     }
 
@@ -305,7 +305,7 @@ private fun FilmRow(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                     }
-                    if (film.IsUpComing) {
+                    if (film.IsUpcoming) {
                         StatusBadge(
                             text = "Sắp chiếu",
                             color = Color(0xFF64B5F6)

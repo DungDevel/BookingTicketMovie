@@ -1,7 +1,7 @@
 package com.example.movieapp
 
 import com.example.movieapp.Api.ApiService
-import com.example.movieapp.Domain.SeatModel
+import com.example.movieapp.Domain.BookingModel
 import okhttp3.OkHttpClient
 import org.junit.Assert.*
 import org.junit.Before
@@ -18,7 +18,11 @@ class SeatBookingConcurrencyTest {
 
     private lateinit var api: ApiService
 
-    private val testSeatId = "UAjkx44viK8-2026-08-19-18:00-A1"
+    private val testBookingId = "UAjkx44viK8-2026-08-19-18:00-A1"
+
+    private val testFilmId = "UAjkx44viK8"
+    private val testDate = "2026-08-19"
+    private val testTime = "18:00"
 
     @Before
     fun setup() {
@@ -34,7 +38,7 @@ class SeatBookingConcurrencyTest {
             .build()
             .create(ApiService::class.java)
 
-        api.updateSeatStatus(testSeatId, mapOf("status" to "available")).execute()
+        api.updateBookingStatus(testBookingId, mapOf("status" to "available")).execute()
     }
 
     @Test
@@ -50,7 +54,7 @@ class SeatBookingConcurrencyTest {
         for (userName in listOf("User A", "User B")) {
             threadPool.submit {
                 startLatch.await()
-                val response = api.updateSeatStatus(testSeatId, mapOf("status" to "booked")).execute()
+                val response = api.updateBookingStatus(testBookingId, mapOf("status" to "booked")).execute()
                 val isSuccess = response.isSuccessful
                 synchronized(results) { results.add(userName to isSuccess) }
                 if (isSuccess) successCount.incrementAndGet()
@@ -75,7 +79,6 @@ class SeatBookingConcurrencyTest {
     @Test
     fun `kiem tra optimistic check - GET truoc khi PATCH van khong dong bit hoan toan`() {
 
-
         val threadPool = Executors.newFixedThreadPool(2)
         val startLatch = CountDownLatch(1)
         val doneLatch = CountDownLatch(2)
@@ -85,22 +88,22 @@ class SeatBookingConcurrencyTest {
             threadPool.submit {
                 startLatch.await()
 
-                val seatsResponse = api.getSeats(
-                    filmId = "UAjkx44viK8",
-                    date = "2026-08-19",
-                    time = "18:00"
+                val bookingsResponse = api.getBookings(
+                    filmId = testFilmId,
+                    date = testDate,
+                    time = testTime
                 ).execute()
-                val seat = seatsResponse.body()?.find { it.id == testSeatId }
+                val booking: BookingModel? = bookingsResponse.body()?.find { it.id == testBookingId }
 
-                if (seat?.status == "available") {
-                    val patchResponse = api.updateSeatStatus(testSeatId, mapOf("status" to "booked")).execute()
+                if (booking?.status == "available") {
+                    val patchResponse = api.updateBookingStatus(testBookingId, mapOf("status" to "booked")).execute()
                     if (patchResponse.isSuccessful) successCount.incrementAndGet()
                 }
                 doneLatch.countDown()
             }
         }
 
-        api.updateSeatStatus(testSeatId, mapOf("status" to "available")).execute()
+        api.updateBookingStatus(testBookingId, mapOf("status" to "available")).execute()
 
         startLatch.countDown()
         doneLatch.await(10, TimeUnit.SECONDS)
