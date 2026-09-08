@@ -34,6 +34,12 @@ services:
       DB_PASSWORD: "${SA_PASSWORD}"
       DB_NAME: MovieAppDb
       PORT: 3000
+      SMTP_HOST: "${SMTP_HOST:-smtp.gmail.com}"
+      SMTP_PORT: "${SMTP_PORT:-465}"
+      SMTP_SECURE: "${SMTP_SECURE:-true}"
+      SMTP_USER: "${SMTP_USER}"
+      SMTP_PASS: "${SMTP_PASS}"
+      MAIL_FROM: "${MAIL_FROM}"
     ports:
       - "3000:3000"
     depends_on:

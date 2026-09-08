@@ -1,6 +1,7 @@
 const express = require('express');
 const { nanoid } = require('nanoid');
 const { sql, getPool } = require('../db');
+const { sendBookingConfirmationEmail } = require('../mail');
 
 const router = express.Router();
 
@@ -76,11 +77,39 @@ router.post('/', async (req, res) => {
   }
 });
 
+
+async function sendTicketEmailIfPossible(pool, bookingRow) {
+  if (!bookingRow.AccountId) {
+    console.log(`[mail] Booking ${bookingRow.Id} không có AccountId, bỏ qua gửi vé.`);
+    return;
+  }
+
+  const profileResult = await pool.request()
+    .input('AccountId', sql.NVarChar, bookingRow.AccountId)
+    .query('SELECT TOP 1 Gmail FROM Profiles WHERE AccountId = @AccountId');
+
+  const gmail = profileResult.recordset[0]?.Gmail;
+
+  await sendBookingConfirmationEmail({
+    to: gmail,
+    booking: mapBooking(bookingRow)
+  });
+}
+
 router.patch('/:id', async (req, res) => {
   try {
     const pool = await getPool();
     const { id } = req.params;
     const { status } = req.body;
+
+    const beforeResult = await pool.request()
+      .input('Id', sql.NVarChar, id)
+      .query('SELECT Status FROM Bookings WHERE Id = @Id');
+
+    if (beforeResult.recordset.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy booking' });
+    }
+    const previousStatus = beforeResult.recordset[0].Status;
 
     const result = await pool.request()
       .input('Id', sql.NVarChar, id)
@@ -92,10 +121,20 @@ router.patch('/:id', async (req, res) => {
     }
 
     const updated = await pool.request().input('Id', sql.NVarChar, id).query('SELECT * FROM Bookings WHERE Id = @Id');
-    res.json(mapBooking(updated.recordset[0]));
+    const updatedRow = updated.recordset[0];
+
+    res.json(mapBooking(updatedRow));
+
+    if (status === 'confirmed' && previousStatus !== 'confirmed') {
+      sendTicketEmailIfPossible(pool, updatedRow).catch((err) => {
+        console.error('[mail] Gửi email vé thất bại:', err);
+      });
+    }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message });
+    }
   }
 });
 
