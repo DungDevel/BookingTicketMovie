@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
@@ -129,11 +130,17 @@ fun AdminDashboardScreen(
                     .clip(RoundedCornerShape(14.dp))
                     .clickable { onLogout() }
                     .padding(vertical = 16.dp),
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(imageVector = Icons.Filled.ExitToApp, contentDescription = null, tint = Color(0xFFE57373))
+                Icon(
+                    imageVector = Icons.Filled.ExitToApp,
+                    contentDescription = null,
+                    tint = Color(0xFFE57373),
+                    modifier = Modifier.size(28.dp)
+                    )
                 Spacer(modifier = Modifier.width(10.dp))
-                Text(text = "Đăng xuất", color = Color(0xFFE57373), fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(text = "Đăng xuất", color = Color(0xFFE57373), fontSize = 22.sp, fontWeight = FontWeight.Medium)
             }
             Spacer(modifier = Modifier.height(24.dp))
         }

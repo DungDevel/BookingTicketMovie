@@ -28,6 +28,9 @@ import com.example.movieapp.Utils.SessionManager
 import com.example.movieapp.ViewModel.SeatViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
@@ -37,13 +40,16 @@ private const val SEAT_GRID_SPAN_COUNT = 8
 class SeatListActivity : AppCompatActivity() {
 
     private lateinit var film: FilmItemModel
+
     private val viewModel: SeatViewModel by viewModels()
 
-    @Inject lateinit var sessionManager: SessionManager
+    @Inject
+    lateinit var sessionManager: SessionManager
 
     private lateinit var dateRecyclerview: RecyclerView
     private lateinit var timeRecyclerview: RecyclerView
     private lateinit var seatRecyclerview: RecyclerView
+
     private lateinit var priceText: TextView
     private lateinit var numberSelectText: TextView
     private lateinit var emptySeatText: TextView
@@ -57,31 +63,47 @@ class SeatListActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
+
         setContentView(R.layout.activity_seat_list)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+
+        ViewCompat.setOnApplyWindowInsetsListener(
+            findViewById(R.id.main)
+        ) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(
+                systemBars.left,
+                systemBars.top,
+                systemBars.right,
+                systemBars.bottom
+            )
             insets
         }
 
         val filmExtra = intent.getSerializableExtra("object") as? FilmItemModel
+
         if (filmExtra == null) {
             Toast.makeText(this, "Không tìm thấy thông tin phim", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
-        film = filmExtra
 
+        film = filmExtra
         bindViews()
         findViewById<TextView>(R.id.textView).text = "Chọn chỗ ngồi - ${film.Title}"
-        findViewById<ImageView>(R.id.backbtn).setOnClickListener { finish() }
-
+        findViewById<ImageView>(R.id.backbtn)
+            .setOnClickListener {
+                finish()
+            }
         setupDateAndTimeSelectors()
         setupSeatGrid()
         setupPayButton()
 
-        loadSeats(dateAdapter.getSelected(), timeAdapter.getSelected())
+        loadSeats(
+            dateAdapter.getSelected(),
+            timeAdapter.getSelected()
+        )
     }
 
     private fun bindViews() {
@@ -95,37 +117,138 @@ class SeatListActivity : AppCompatActivity() {
     }
 
     private fun setupDateAndTimeSelectors() {
-        val dates = ShowDateGenerator.nextDays(7)
-        val times = ShowTimeGenerator.defaultTimes()
+
+        val dates = createShowDates()
+
+        if (dates.isEmpty()) {
+            Toast.makeText(this, "Không có ngày chiếu khả dụng", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
 
         dateAdapter = DateAdapter(dates) { selectedDate ->
-            val newTimes = ShowTimeGenerator.availableTimes(selectedDate)
-            timeAdapter.updateTimes(newTimes)
-            loadSeats(selectedDate, timeAdapter.getSelected())
-        }
+             val newTimes = getAvailableTimesForDate(selectedDate)
+                timeAdapter.updateTimes(newTimes)
+                loadSeats(selectedDate, timeAdapter.getSelected())
+            }
+
         dateRecyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         dateRecyclerview.adapter = dateAdapter
 
-        val initialTimes = ShowTimeGenerator.availableTimes(dateAdapter.getSelected())
+        val initialTimes = getAvailableTimesForDate(dateAdapter.getSelected())
+
         timeAdapter = TimeAdapter(initialTimes) { selectedTime ->
-            loadSeats(dateAdapter.getSelected(), selectedTime)
-        }
+                loadSeats(dateAdapter.getSelected(), selectedTime)
+            }
+
         timeRecyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         timeRecyclerview.adapter = timeAdapter
+    }
+
+    private fun createShowDates(): List<ShowDateModel> {
+
+        val releaseAt = film.ReleaseAt
+        if (releaseAt == null) {
+            return ShowDateGenerator.nextDays(7)
+        }
+        val now = System.currentTimeMillis()
+
+        if (now >= releaseAt) {
+            return ShowDateGenerator.nextDays(7)
+        }
+
+        return createDatesFromReleaseDate(
+            releaseAt = releaseAt,
+            count = 7
+        )
+    }
+
+
+    private fun createDatesFromReleaseDate(
+        releaseAt: Long,
+        count: Int
+    ): List<ShowDateModel> {
+        val calendar = Calendar.getInstance().apply {
+                timeInMillis = releaseAt
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+
+        val apiFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val dayFormat = SimpleDateFormat("EEE", Locale("vi"))
+        val numberFormat = SimpleDateFormat("dd", Locale.getDefault())
+        val result = mutableListOf<ShowDateModel>()
+
+        repeat(count) {
+            result.add(
+                ShowDateModel(
+                    fullDate = apiFormat.format(calendar.time),
+                    dayOfWeek = dayFormat
+                            .format(calendar.time)
+                            .replaceFirstChar { c ->
+                                c.uppercase()
+                            },
+                    dayNumber = numberFormat.format(calendar.time)
+                )
+            )
+            calendar.add(Calendar.DAY_OF_MONTH, 1)
+        }
+        return result
+    }
+
+
+    private fun getAvailableTimesForDate(
+        selectedDate: ShowDateModel
+    ): List<String> {
+
+        val releaseAt = film.ReleaseAt
+
+        if (releaseAt == null) {
+            return ShowTimeGenerator.availableTimes(selectedDate)
+        }
+        val baseTimes = ShowTimeGenerator.availableTimes(selectedDate)
+        val releaseCalendar = Calendar.getInstance().apply { timeInMillis = releaseAt }
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val releaseDate = dateFormat.format(releaseCalendar.time)
+
+        if (selectedDate.fullDate != releaseDate) {
+            return baseTimes
+        }
+
+        val releaseHour = releaseCalendar.get(Calendar.HOUR_OF_DAY)
+        val releaseMinute = releaseCalendar.get(Calendar.MINUTE)
+        val releaseMinutes = releaseHour * 60 + releaseMinute
+
+        return baseTimes.filter { time ->
+            try {
+                val parts = time.split(":")
+                if (parts.size != 2) {
+                    return@filter false
+                }
+                val hour = parts[0].toInt()
+                val minute = parts[1].toInt()
+                val showMinutes = hour * 60 + minute
+                showMinutes >= releaseMinutes
+            } catch (
+                e: Exception
+            ) { false }
+        }
     }
 
     private fun setupSeatGrid() {
         seatRecyclerview.layoutManager = GridLayoutManager(this, SEAT_GRID_SPAN_COUNT)
         seatRecyclerview.isNestedScrollingEnabled = false
-
         seatAdapter = SeatAdapter(mutableListOf()) { selected ->
-            selectedSeats = selected
-            updateSummary()
-        }
+                selectedSeats = selected
+                updateSummary()
+            }
         seatRecyclerview.adapter = seatAdapter
     }
 
     private fun setupPayButton() {
+
         payButton.setOnClickListener {
             if (selectedSeats.isEmpty()) {
                 Toast.makeText(this, "Vui lòng chọn ít nhất 1 ghế", Toast.LENGTH_SHORT).show()
@@ -140,14 +263,14 @@ class SeatListActivity : AppCompatActivity() {
 
             val date = dateAdapter.getSelected()
             val time = timeAdapter.getSelected()
-            if (time == null){
-                Toast.makeText(this, "Suất chiếu này đã bắt đầu, vui lòng chọn suất chiếu khác",
-                    Toast.LENGTH_SHORT).show()
+            if (time == null) {
+                Toast.makeText(this, "Không có suất chiếu hợp lệ, vui lòng chọn suất khác", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             val seatCodes = selectedSeats.map { it.code }
 
             payButton.isEnabled = false
+
             viewModel.holdSeats(
                 accountId = accountId,
                 filmId = film.id,
@@ -160,58 +283,63 @@ class SeatListActivity : AppCompatActivity() {
                 payButton.isEnabled = true
 
                 if (result.isError || result.data == null) {
-                    Toast.makeText(
-                        this,
-                        result.errorMessage ?: "Không giữ được ghế, vui lòng thử lại",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast.makeText(this, result.errorMessage ?: "Không giữ được ghế, vui lòng thử lại", Toast.LENGTH_LONG).show()
                     loadSeats(date, time)
                     return@observe
                 }
 
                 val booking = result.data
-                val intent = Intent(this, PaymentActivity::class.java).apply {
-                    putExtra("film", film)
-                    putExtra("date", date.fullDate)
-                    putExtra("time", time)
-                    putExtra("seats", ArrayList(selectedSeats))
-                    putExtra("totalPrice", calculateTotal())
-                    putExtra("bookingId", booking.id)
-                }
+                val intent = Intent(this, PaymentActivity::class.java)
+                    .apply {
+                        putExtra("film", film)
+                        putExtra("date", date.fullDate)
+                        putExtra("time", time)
+                        putExtra("seats", ArrayList(selectedSeats))
+                        putExtra("totalPrice", calculateTotal())
+                        putExtra("bookingId", booking.id)
+                    }
                 startActivity(intent)
             }
         }
     }
 
-    private fun loadSeats(date: ShowDateModel, time: String?) {
-        if (time == null){
+    private fun loadSeats(
+        date: ShowDateModel,
+        time: String?
+    ) {
+        if (time == null) {
             seatRecyclerview.visibility = View.GONE
-            emptySeatText.text = "Suất chiếu trong ngày hôm nay đã không còn, vui lòng chọn ngày khác"
+            emptySeatText.text = "Không có suất chiếu phù hợp trong ngày này, vui lòng chọn ngày khác"
             emptySeatText.visibility = View.VISIBLE
-            seatAdapter.updateSeats(mutableListOf())
+            seatAdapter.updateSeats(emptyList())
             selectedSeats = emptyList()
             updateSummary()
             return
         }
-
         seatRecyclerview.visibility = View.VISIBLE
-        emptySeatText.text = "Suất chiếu này hiện chưa có sơ đồ ghế"
         emptySeatText.visibility = View.GONE
-
         viewModel.loadSeats(film.id, date.fullDate, time).observe(this) { result ->
             if (result.isError) {
                 Toast.makeText(this, "Không tải được sơ đồ ghế, thử lại sau", Toast.LENGTH_SHORT).show()
             }
-            seatAdapter.updateSeats(result.data)
 
+            seatAdapter.updateSeats(result.data)
             val isEmpty = result.data.isEmpty()
             seatRecyclerview.visibility = if (isEmpty) View.GONE else View.VISIBLE
             emptySeatText.visibility = if (isEmpty) View.VISIBLE else View.GONE
+            if (isEmpty) { emptySeatText.text = "Suất chiếu này hiện chưa có sơ đồ ghế" }
         }
     }
 
     private fun calculateTotal(): Double {
-        return selectedSeats.sumOf { seat -> if (seat.price > 0) seat.price else film.price }
+
+        return selectedSeats.sumOf { seat ->
+            if (seat.price > 0) {
+                seat.price
+            } else {
+                film.price
+            }
+        }
     }
 
     private fun updateSummary() {

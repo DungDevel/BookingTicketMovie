@@ -113,10 +113,6 @@ fun AdminManageDashboardScreen(apiService: ApiService, onBackClick: () -> Unit){
                 tryFinsh()
             }
         })
-
-        // Giờ chỉ còn 1 collection phim duy nhất, nên tổng số phim là số bản ghi trả
-        // về thẳng từ đây, không cần cộng dồn Item+Upcoming như trước (vốn đếm trùng
-        // với những phim vừa "đang chiếu" vừa "sắp chiếu").
         apiService.getFilms().enqueue(object : Callback<List<FilmItemModel>>{
             override fun onResponse(call: Call<List<FilmItemModel>>, response: Response<List<FilmItemModel>>){
                 totalFilmCount = response.body()?.size ?: 0
