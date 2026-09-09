@@ -196,7 +196,10 @@ fun BookingHistoryScreen(
 }
 
 @Composable
-private fun BookingCard(booking: BookingModel, posterUrl: String?){
+private fun BookingCard(
+    booking: BookingModel,
+    posterUrl: String?
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -210,7 +213,7 @@ private fun BookingCard(booking: BookingModel, posterUrl: String?){
                 .clip(RoundedCornerShape(10.dp))
                 .background(Color(0xFF2A2A2A))
         ) {
-            if (!posterUrl.isNullOrBlank()){
+            if (!posterUrl.isNullOrBlank()) {
                 AsyncImage(
                     model = posterUrl,
                     contentDescription = null,
@@ -222,34 +225,83 @@ private fun BookingCard(booking: BookingModel, posterUrl: String?){
                     imageVector = Icons.Filled.ConfirmationNumber,
                     contentDescription = null,
                     tint = Color.Gray,
-                    modifier = Modifier.align(Alignment.Center).size(28.dp)
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(28.dp)
                 )
             }
         }
 
         Spacer(modifier = Modifier.width(14.dp))
 
-        Column(modifier = Modifier.weight(1f)) {
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
             Text(
-                text = booking.filmTitle.ifBlank { "Phim không xác định" },
+                text = booking.filmTitle.ifBlank {
+                    "Phim không xác định"
+                },
                 color = Color.White,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 2
             )
+
             Spacer(modifier = Modifier.height(6.dp))
+
             Text(
                 text = "${booking.date} - ${booking.time}",
                 color = Color(0xFFBDBDBD),
                 fontSize = 13.sp
             )
+
             Spacer(modifier = Modifier.height(4.dp))
+
             Text(
-                text = "Ghế: ${booking.seats.joinToString(", ")}",
+                text = "Ghế: ${
+                    booking.seats.joinToString(", ")
+                }",
                 color = Color(0xFFBDBDBD),
                 fontSize = 13.sp
             )
+
+            if (booking.combos.isNotEmpty()) {
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = "Bắp & nước:",
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                booking.combos.forEach { combo ->
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "• ${combo.name} x${combo.quantity}",
+                            color = Color(0xFFBDBDBD),
+                            fontSize = 13.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        Text(
+                            text = formatCurrency(combo.subtotal),
+                            color = Color(0xFFBDBDBD),
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -261,7 +313,10 @@ private fun BookingCard(booking: BookingModel, posterUrl: String?){
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 )
-                StatusBadge(status = booking.status)
+
+                StatusBadge(
+                    status = booking.status
+                )
             }
         }
     }

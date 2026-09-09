@@ -5,11 +5,13 @@ import androidx.lifecycle.MutableLiveData
 import com.example.movieapp.Api.ApiService
 import com.example.movieapp.Domain.BookingModel
 import com.example.movieapp.Domain.BookingStatus
+import com.example.movieapp.Domain.ComboItemModel
 import com.example.movieapp.Domain.SeatConfigModel
 import com.example.movieapp.Domain.SeatModel
 import com.example.movieapp.Domain.SeatRowConfig
 import com.example.movieapp.Domain.SeatStatus
 import com.example.movieapp.Domain.SeatType
+import com.example.movieapp.Domain.SelectedComboModel
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -151,7 +153,8 @@ class SeatRepository @Inject constructor(
         date: String,
         time: String,
         selectedSeatCodes: List<String>,
-        totalPrice: Double
+        totalPrice: Double,
+        combos: List<SelectedComboModel> = emptyList()
     ): LiveData<ApiResult<BookingModel?>> {
         val liveData = MutableLiveData<ApiResult<BookingModel?>>()
 
@@ -179,7 +182,8 @@ class SeatRepository @Inject constructor(
                 seats = selectedSeatCodes,
                 totalPrice = totalPrice,
                 status = BookingStatus.PENDING,
-                createdAt = System.currentTimeMillis()
+                createdAt = System.currentTimeMillis(),
+                combos = combos
             )
 
             api.createBooking(booking).enqueue(object : Callback<BookingModel> {
@@ -230,5 +234,24 @@ class SeatRepository @Inject constructor(
                 t.printStackTrace()
             }
         })
+    }
+
+    fun loadComboItems(): LiveData<ApiResult<List<ComboItemModel>>> {
+        val liveData = MutableLiveData<ApiResult<List<ComboItemModel>>>()
+        api.getComboItems().enqueue(object : Callback<List<ComboItemModel>> {
+            override fun onResponse(call: Call<List<ComboItemModel>>, response: Response<List<ComboItemModel>>) {
+                if (response.isSuccessful) {
+                    liveData.value = ApiResult(response.body() ?: emptyList())
+                } else {
+                    liveData.value = ApiResult(emptyList(), isError = true)
+                }
+            }
+
+            override fun onFailure(call: Call<List<ComboItemModel>>, t: Throwable) {
+                t.printStackTrace()
+                liveData.value = ApiResult(emptyList(), isError = true)
+            }
+        })
+        return liveData
     }
 }

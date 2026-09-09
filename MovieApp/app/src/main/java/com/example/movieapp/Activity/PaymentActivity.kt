@@ -16,6 +16,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.movieapp.Domain.FilmItemModel
 import com.example.movieapp.Domain.SeatModel
+import com.example.movieapp.Domain.SelectedComboModel
 import com.example.movieapp.R
 import com.example.movieapp.ViewModel.SeatViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -33,6 +34,8 @@ class PaymentActivity : AppCompatActivity() {
     private lateinit var seats: List<SeatModel>
     private var totalPrice: Double = 0.0
     private lateinit var bookingId: String
+
+    private lateinit var combos: List<SelectedComboModel>
 
     private var isConfirmed = false
 
@@ -57,6 +60,9 @@ class PaymentActivity : AppCompatActivity() {
 
         val bookingIdExtra = intent.getStringExtra("bookingId")
 
+        @Suppress("UNCHECKED_CAST")
+        val combosExtra = intent.getSerializableExtra("combos") as? ArrayList<SelectedComboModel>
+
         if (filmExtra == null || seatsExtra.isNullOrEmpty() || dateExtra == null || timeExtra == null || bookingIdExtra.isNullOrBlank()) {
             Toast.makeText(this, "Thiếu thông tin đặt vé", Toast.LENGTH_SHORT).show()
             finish()
@@ -68,6 +74,8 @@ class PaymentActivity : AppCompatActivity() {
         date = dateExtra
         time = timeExtra
         bookingId = bookingIdExtra
+        combos = combosExtra ?: emptyList()
+
         totalPrice = intent.getDoubleExtra("totalPrice", seats.sumOf { if (it.price > 0) it.price else film.price })
 
         findViewById<ImageView>(R.id.backbtn).setOnClickListener { releaseAndFinish() }
@@ -85,6 +93,25 @@ class PaymentActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.filmTitleText).text = film.Title
         findViewById<TextView>(R.id.showtimeText).text = "Suất chiếu: $date • $time"
         findViewById<TextView>(R.id.seatsText).text = "Ghế: ${seats.joinToString(", ") { it.code }}"
+
+        val combosTextView = findViewById<TextView>(R.id.combosText)
+        if (combos.isEmpty()){
+            combosTextView.visibility = View.GONE
+        } else {
+            combosTextView.visibility = View.VISIBLE
+
+            val comboText = buildString {
+                append("Bắp & nước:\n")
+                combos.forEach { combo ->
+                    append("- ${combo.name} x${combo.quantity}")
+                    append("--")
+                    append(formatter.format(combo.subtotal))
+                    append("\n")
+                }
+            }.trimEnd()
+            combosTextView.text = comboText
+        }
+
         findViewById<TextView>(R.id.totalPriceText).text = formatter.format(totalPrice)
     }
 

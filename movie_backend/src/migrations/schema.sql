@@ -16,7 +16,6 @@ BEGIN
     );
 END
 
-
 IF NOT EXISTS (
     SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Films') AND name = 'ReleaseAt'
 )
@@ -118,8 +117,17 @@ BEGIN
         Seats       NVARCHAR(500) NOT NULL,             
         TotalPrice  FLOAT NOT NULL DEFAULT 0,
         Status      NVARCHAR(20)  NOT NULL DEFAULT 'pending',
-        CreatedAt   BIGINT NOT NULL
+        CreatedAt   BIGINT NOT NULL,
+        Combos      NVARCHAR(MAX) NULL                
     );
+END
+
+
+IF NOT EXISTS (
+    SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Bookings') AND name = 'Combos'
+)
+BEGIN
+    ALTER TABLE Bookings ADD Combos NVARCHAR(MAX) NULL;
 END
 
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Bookings_Film_Date_Time')
@@ -127,6 +135,20 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Bookings_Film_Date_Tim
 
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Bookings_AccountId')
     CREATE INDEX IX_Bookings_AccountId ON Bookings(AccountId);
+
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ComboItems')
+BEGIN
+    CREATE TABLE ComboItems (
+        Id          NVARCHAR(50)  NOT NULL PRIMARY KEY,
+        Name        NVARCHAR(255) NOT NULL,
+        Description NVARCHAR(500) NULL,
+        Price       FLOAT         NOT NULL DEFAULT 0,
+        Category    NVARCHAR(20)  NOT NULL DEFAULT 'popcorn',
+        ImageUrl    NVARCHAR(500) NULL,
+        IsActive    BIT           NOT NULL DEFAULT 1
+    );
+END
 
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Reviews_FilmId')
     CREATE INDEX IX_Reviews_FilmId ON Reviews(FilmId);

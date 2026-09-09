@@ -2,6 +2,7 @@ package com.example.movieapp.Api
 
 import com.example.movieapp.Domain.AccountModel
 import com.example.movieapp.Domain.BookingModel
+import com.example.movieapp.Domain.ComboItemModel
 import com.example.movieapp.Domain.FilmItemModel
 import com.example.movieapp.Domain.GoogleLoginRequest
 import com.example.movieapp.Domain.ProfileModel
@@ -37,6 +38,9 @@ interface ApiService {
 
     @POST("Account/google")
     fun loginWithGoogle(@Body body: GoogleLoginRequest): Call<AccountModel>
+
+    @GET("ComboItems")
+    fun getComboItems(): Call<List<ComboItemModel>>
 
     @GET("Profile")
     fun getProfile(): Call<List<ProfileModel>>

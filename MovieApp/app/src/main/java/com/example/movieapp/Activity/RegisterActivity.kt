@@ -43,6 +43,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -161,13 +162,14 @@ fun RegisterScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 32.dp, vertical = 16.dp)
         ) {
-            Spacer(modifier = Modifier.height(128.dp))
+            Spacer(modifier = Modifier.height(100.dp))
             Text(
                 text = "Đăng Ký",
                 style = TextStyle(
                     color = Color.White,
                     fontSize = 50.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -250,7 +252,6 @@ fun RegisterScreen(
             }
         }
 
-        // Chặn thao tác trên form trong lúc đang gửi yêu cầu đăng ký
         if (isLoading) {
             Box(
                 modifier = Modifier

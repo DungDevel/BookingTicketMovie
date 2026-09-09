@@ -1,14 +1,139 @@
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools" android:id="@+id/main" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/blackBackground" tools:context=".Activity.PaymentActivity">
-    <ImageView android:id="@+id/backbtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:layout_marginTop="35dp" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" app:srcCompat="@drawable/back_2"/>
-    <TextView android:id="@+id/titleText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Xác nhận thanh toán" android:textColor="@color/white" android:textSize="20sp" android:textStyle="bold" app:layout_constraintBottom_toBottomOf="@id/backbtn" app:layout_constraintStart_toEndOf="@id/backbtn" app:layout_constraintTop_toTopOf="@id/backbtn" android:layout_marginStart="12dp"/>
-    <LinearLayout android:id="@+id/summaryCard" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:layout_marginTop="24dp" android:orientation="vertical" android:padding="16dp" android:background="@drawable/bg_card" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/backbtn">
-        <TextView android:id="@+id/filmTitleText" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Tên phim" android:textColor="@color/white" android:textSize="18sp" android:textStyle="bold"/>
-        <TextView android:id="@+id/showtimeText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Suất chiếu: --" android:textColor="@color/white" android:textSize="14sp"/>
-        <TextView android:id="@+id/seatsText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Ghế: --" android:textColor="@color/white" android:textSize="14sp"/>
-        <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginVertical="12dp" android:background="@color/black4"/>
-        <TextView android:id="@+id/totalLabelText" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Tổng tiền" android:textColor="@color/green" android:textSize="14sp"/>
-        <TextView android:id="@+id/totalPriceText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="0đ" android:textColor="@color/white" android:textSize="24sp" android:textStyle="bold"/>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/blackBackground"
+    tools:context=".Activity.PaymentActivity">
+
+    <ImageView
+        android:id="@+id/backbtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="35dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/back_2" />
+
+    <TextView
+        android:id="@+id/titleText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:text="Xác nhận thanh toán"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/backbtn"
+        app:layout_constraintStart_toEndOf="@id/backbtn"
+        app:layout_constraintTop_toTopOf="@id/backbtn" />
+
+    <LinearLayout
+        android:id="@+id/summaryCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/bg_card"
+        android:orientation="vertical"
+        android:padding="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/backbtn">
+
+        <!-- Tên phim -->
+        <TextView
+            android:id="@+id/filmTitleText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tên phim"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <!-- Suất chiếu -->
+        <TextView
+            android:id="@+id/showtimeText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Suất chiếu: --"
+            android:textColor="@color/white"
+            android:textSize="14sp" />
+
+        <!-- Ghế -->
+        <TextView
+            android:id="@+id/seatsText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Ghế: --"
+            android:textColor="@color/white"
+            android:textSize="14sp" />
+
+        <!-- Bắp & nước -->
+        <TextView
+            android:id="@+id/combosText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Bắp &amp; nước"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="12dp"
+            android:background="@color/black4" />
+
+        <!-- Tổng tiền -->
+        <TextView
+            android:id="@+id/totalLabelText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tổng tiền"
+            android:textColor="@color/green"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/totalPriceText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="0đ"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
     </LinearLayout>
-    <ProgressBar android:id="@+id/loadingProgress" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent"/>
-    <Button android:id="@+id/confirmButton" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginHorizontal="16dp" android:layout_marginBottom="32dp" android:background="@color/green" android:text="Xác nhận thanh toán" android:textColor="@color/white" android:textStyle="bold" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent"/>
+
+    <ProgressBar
+        android:id="@+id/loadingProgress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/confirmButton"
+        android:layout_width="0dp"
+        android:layout_height="52dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="32dp"
+        android:background="@color/green"
+        android:text="Xác nhận thanh toán"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

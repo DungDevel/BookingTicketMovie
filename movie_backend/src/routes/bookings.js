@@ -6,6 +6,13 @@ const { sendBookingConfirmationEmail } = require('../mail');
 const router = express.Router();
 
 function mapBooking(row) {
+  let combos = [];
+  try {
+    combos = row.Combos ? JSON.parse(row.Combos) : [];
+  } catch (e) {
+    combos = [];
+  }
+
   return {
     id: row.Id,
     filmId: row.FilmId,
@@ -16,7 +23,8 @@ function mapBooking(row) {
     seats: (row.Seats || '').split(',').filter((s) => s.length > 0),
     totalPrice: row.TotalPrice || 0,
     status: row.Status,
-    createdAt: Number(row.CreatedAt)
+    createdAt: Number(row.CreatedAt),
+    combos
   };
 }
 
@@ -53,6 +61,7 @@ router.post('/', async (req, res) => {
     const body = req.body;
     const id = body.id && body.id.length > 0 ? body.id : nanoid(11);
     const createdAt = body.createdAt || Date.now();
+    const combosJson = JSON.stringify(body.combos || []);
 
     await pool.request()
       .input('Id', sql.NVarChar, id)
@@ -65,18 +74,18 @@ router.post('/', async (req, res) => {
       .input('TotalPrice', sql.Float, body.totalPrice || 0)
       .input('Status', sql.NVarChar, body.status || 'pending')
       .input('CreatedAt', sql.BigInt, createdAt)
+      .input('Combos', sql.NVarChar(sql.MAX), combosJson)
       .query(`
-        INSERT INTO Bookings (Id, FilmId, AccountId, FilmTitle, [Date], [Time], Seats, TotalPrice, Status, CreatedAt)
-        VALUES (@Id, @FilmId, @AccountId, @FilmTitle, @Date, @Time, @Seats, @TotalPrice, @Status, @CreatedAt)
+        INSERT INTO Bookings (Id, FilmId, AccountId, FilmTitle, [Date], [Time], Seats, TotalPrice, Status, CreatedAt, Combos)
+        VALUES (@Id, @FilmId, @AccountId, @FilmTitle, @Date, @Time, @Seats, @TotalPrice, @Status, @CreatedAt, @Combos)
       `);
 
-    res.status(201).json({ ...body, id, createdAt, status: body.status || 'pending' });
+    res.status(201).json({ ...body, id, createdAt, status: body.status || 'pending', combos: body.combos || [] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 async function sendTicketEmailIfPossible(pool, bookingRow) {
   if (!bookingRow.AccountId) {

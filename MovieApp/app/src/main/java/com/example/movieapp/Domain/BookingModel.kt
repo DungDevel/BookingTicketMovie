@@ -17,5 +17,6 @@ data class BookingModel(
     var seats: List<String> = emptyList(),
     var totalPrice: Double = 0.0,
     var status: String = BookingStatus.PENDING,
-    var createdAt: Long = System.currentTimeMillis()
+    var createdAt: Long = System.currentTimeMillis(),
+    var combos: List<SelectedComboModel> = emptyList()
 ) : Serializable

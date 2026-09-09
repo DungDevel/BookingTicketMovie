@@ -227,16 +227,17 @@ fun LoginScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 32.dp, vertical = 16.dp)
         ) {
-            Spacer(modifier = Modifier.height(128.dp))
+            Spacer(modifier = Modifier.height(100.dp))
             Text(text = "Đăng Nhập",
                 style = TextStyle(
                     color = Color.White,
                     fontSize = 50.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(128.dp))
+            Spacer(modifier = Modifier.height(100.dp))
             GradientTextField(
                 value = username,
                 onValueChange = { username = it },

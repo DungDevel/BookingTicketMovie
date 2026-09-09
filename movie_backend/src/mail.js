@@ -27,6 +27,15 @@ function formatCurrency(amount) {
 
 function buildTicketHtml(booking) {
   const seatsText = (booking.seats || []).join(', ');
+  const combos = booking.combos || [];
+  const combosRow = combos.length > 0 ? `
+          <tr>
+            <td style="padding: 6px 0; color: #888; vertical-align: top;">Bắp / Nước</td>
+            <td style="padding: 6px 0;">
+              ${combos.map((c) => `${c.name} x${c.quantity}`).join('<br/>')}
+            </td>
+          </tr>` : '';
+
   return `
     <div style="font-family: Arial, Helvetica, sans-serif; max-width: 480px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
       <div style="background: linear-gradient(135deg, #e57373, #f06292); padding: 20px; color: #fff;">
@@ -46,7 +55,7 @@ function buildTicketHtml(booking) {
           <tr>
             <td style="padding: 6px 0; color: #888;">Ghế</td>
             <td style="padding: 6px 0;">${seatsText}</td>
-          </tr>
+          </tr>${combosRow}
           <tr>
             <td style="padding: 6px 0; color: #888;">Tổng tiền</td>
             <td style="padding: 6px 0; font-weight: bold; color: #e57373;">${formatCurrency(booking.totalPrice)}</td>
@@ -57,7 +66,7 @@ function buildTicketHtml(booking) {
           </tr>
         </table>
         <p style="margin-top: 20px; font-size: 12px; color: #999;">
-          Vui lòng xuất trình mã vé này tại quầy để nhận vé. Chúc bạn xem phim vui vẻ!
+          Vui lòng xuất trình mã vé này tại quầy để nhận vé${combos.length > 0 ? ' và bắp/nước' : ''}. Chúc bạn xem phim vui vẻ!
         </p>
       </div>
     </div>

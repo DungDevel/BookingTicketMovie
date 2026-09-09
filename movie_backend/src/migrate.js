@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const sql = require('mssql');
+const { nanoid } = require('nanoid');
 const { dbConfig, masterConfig } = require('./db');
 
 const SCHEMA_PATH = path.join(__dirname, 'migrations', 'schema.sql');
@@ -46,11 +47,47 @@ async function isAlreadySeeded(pool) {
   return result.recordset[0].total > 0;
 }
 
+
+const DEFAULT_COMBO_ITEMS = [
+  { name: 'Bắp rang bơ (nhỏ)', description: 'Bắp rang bơ size nhỏ', price: 35000, category: 'popcorn', imageUrl: 'https://res.cloudinary.com/vuyb39ll/image/upload/v1788943214/Bap.jpg' },
+  { name: 'Bắp rang bơ (lớn)', description: 'Bắp rang bơ size lớn', price: 55000, category: 'popcorn', imageUrl: 'https://res.cloudinary.com/vuyb39ll/image/upload/v1788943214/Bap.jpg' },
+  { name: 'Bắp phô mai (lớn)', description: 'Bắp phô mai size lớn', price: 65000, category: 'popcorn', imageUrl: 'https://res.cloudinary.com/vuyb39ll/image/upload/v1788943214/Bap.jpg' },
+  { name: 'Coca-Cola', description: 'Nước ngọt có gas 32oz', price: 25000, category: 'drink', imageUrl: 'https://res.cloudinary.com/vuyb39ll/image/upload/v1788943213/NuocBap.jpg' },
+  { name: 'Pepsi', description: 'Nước ngọt có gas 32oz', price: 25000, category: 'drink', imageUrl: 'https://res.cloudinary.com/vuyb39ll/image/upload/v1788943213/NuocBap.jpg' },
+  { name: 'Trà đào', description: 'Trà đào mát lạnh 32oz', price: 30000, category: 'drink', imageUrl: 'https://res.cloudinary.com/vuyb39ll/image/upload/v1788943213/NuocBap.jpg' },
+  { name: 'Nước suối', description: 'Nước suối tinh khiết 500ml', price: 15000, category: 'drink', imageUrl: 'https://res.cloudinary.com/vuyb39ll/image/upload/v1788943213/NuocBap.jpg' },
+  { name: 'Combo 1 người', description: '1 Bắp rang bơ (lớn) + 1 Nước ngọt (lớn)', price: 79000, category: 'combo', imageUrl: 'https://res.cloudinary.com/vuyb39ll/image/upload/v1788943214/Combobap.jpg' },
+  { name: 'Combo 2 người', description: '1 Bắp rang bơ (lớn) + 2 Nước ngọt (lớn)', price: 99000, category: 'combo', imageUrl: 'https://res.cloudinary.com/vuyb39ll/image/upload/v1788943214/Combobap.jpg' },
+  { name: 'Combo 4 người', description: '2 Bắp rang bơ (lớn) + 4 Nước ngọt (lớn)', price: 179000, category: 'combo', imageUrl: 'https://res.cloudinary.com/vuyb39ll/image/upload/v1788943214/Combobap.jpg' }
+];
+
+async function seedComboItemsIfEmpty(pool) {
+  const countResult = await pool.request().query('SELECT COUNT(*) AS total FROM ComboItems');
+  if (countResult.recordset[0].total > 0) {
+    return;
+  }
+
+  for (const item of DEFAULT_COMBO_ITEMS) {
+    await pool.request()
+      .input('Id', sql.NVarChar, nanoid(11))
+      .input('Name', sql.NVarChar, item.name)
+      .input('Description', sql.NVarChar, item.description)
+      .input('Price', sql.Float, item.price)
+      .input('Category', sql.NVarChar, item.category)
+      .input('ImageUrl', sql.NVarChar, '')
+      .input('IsActive', sql.Bit, 1)
+      .query(`
+        INSERT INTO ComboItems (Id, Name, Description, Price, Category, ImageUrl, IsActive)
+        VALUES (@Id, @Name, @Description, @Price, @Category, @ImageUrl, @IsActive)
+      `);
+  }
+  console.log(`[migrate] Đã seed ${DEFAULT_COMBO_ITEMS.length} sản phẩm bắp/nước/combo.`);
+}
+
 async function seedData(pool) {
   const raw = fs.readFileSync(SEED_PATH, 'utf8');
   const data = JSON.parse(raw);
 
-  // ---- Films + Genres + Casts ----
   for (const film of data.Item || []) {
     await pool.request()
       .input('Id', sql.NVarChar, film.id)
@@ -64,9 +101,10 @@ async function seedData(pool) {
       .input('Price', sql.Float, film.price || 0)
       .input('IsNowShowing', sql.Bit, film.IsNowShowing ? 1 : 0)
       .input('IsUpcoming', sql.Bit, film.IsUpcoming ? 1 : 0)
+      .input('ReleaseAt', sql.BigInt, film.ReleaseAt || null)
       .query(`
-        INSERT INTO Films (Id, Title, Description, Poster, [Time], Trailer, Imdb, [Year], Price, IsNowShowing, IsUpcoming)
-        VALUES (@Id, @Title, @Description, @Poster, @Time, @Trailer, @Imdb, @Year, @Price, @IsNowShowing, @IsUpcoming)
+        INSERT INTO Films (Id, Title, Description, Poster, [Time], Trailer, Imdb, [Year], Price, IsNowShowing, IsUpcoming, ReleaseAt)
+        VALUES (@Id, @Title, @Description, @Poster, @Time, @Trailer, @Imdb, @Year, @Price, @IsNowShowing, @IsUpcoming, @ReleaseAt)
       `);
 
     for (const genre of film.Genre || []) {
@@ -86,7 +124,6 @@ async function seedData(pool) {
   }
   console.log(`[migrate] Đã seed ${data.Item?.length || 0} phim.`);
 
-  // ---- Accounts ----
   for (const acc of data.Account || []) {
     await pool.request()
       .input('Id', sql.NVarChar, acc.id)
@@ -97,7 +134,6 @@ async function seedData(pool) {
   }
   console.log(`[migrate] Đã seed ${data.Account?.length || 0} tài khoản.`);
 
-  // ---- Profiles ----
   for (const p of data.Profile || []) {
     await pool.request()
       .input('Id', sql.NVarChar, p.id)
@@ -114,7 +150,6 @@ async function seedData(pool) {
   }
   console.log(`[migrate] Đã seed ${data.Profile?.length || 0} hồ sơ.`);
 
-  // ---- Reviews ----
   for (const r of data.Reviews || []) {
     await pool.request()
       .input('Id', sql.NVarChar, r.id)
@@ -131,7 +166,6 @@ async function seedData(pool) {
   }
   console.log(`[migrate] Đã seed ${data.Reviews?.length || 0} đánh giá.`);
 
-  // ---- SeatConfig (normal + vip) ----
   if (data.SeatConfig) {
     for (const type of ['normal', 'vip']) {
       const cfg = data.SeatConfig[type];
@@ -146,7 +180,6 @@ async function seedData(pool) {
     console.log('[migrate] Đã seed cấu hình ghế (normal + vip).');
   }
 
-  // ---- Bookings ----
   for (const b of data.Bookings || []) {
     await pool.request()
       .input('Id', sql.NVarChar, b.id)
@@ -180,6 +213,8 @@ async function runMigrations() {
   } else {
     await seedData(pool);
   }
+
+  await seedComboItemsIfEmpty(pool);
 
   await pool.close();
   console.log('[migrate] Hoàn tất migrate.');

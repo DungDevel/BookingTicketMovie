@@ -9,6 +9,7 @@ const profilesRouter = require('./routes/profiles');
 const seatConfigRouter = require('./routes/seatConfig');
 const bookingsRouter = require('./routes/bookings');
 const reviewsRouter = require('./routes/reviews');
+const comboItemsRouter = require('./routes/comboItems');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,12 +23,14 @@ app.use('/Profile', profilesRouter);
 app.use('/SeatConfig', seatConfigRouter);
 app.use('/Bookings', bookingsRouter);
 app.use('/Reviews', reviewsRouter);
+app.use('/ComboItems', comboItemsRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 
 const PROMOTE_INTERVAL_MS = 60 * 1000;
 function startAutoPromoteJob() {
+  console.log(`[auto-promote] Job tự động chuyển trạng thái phim đã khởi động (chạy mỗi ${PROMOTE_INTERVAL_MS / 1000}s).`);
   setInterval(async () => {
     try {
       const pool = await getPool();

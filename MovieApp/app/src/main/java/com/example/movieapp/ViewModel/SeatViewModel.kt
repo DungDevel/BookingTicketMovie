@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import com.example.movieapp.Domain.BookingModel
 import com.example.movieapp.Domain.SeatModel
+import com.example.movieapp.Domain.SelectedComboModel
 import com.example.movieapp.Repository.ApiResult
 import com.example.movieapp.Repository.SeatRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,9 +26,10 @@ class SeatViewModel @Inject constructor(
         date: String,
         time: String,
         selectedSeatCodes: List<String>,
-        totalPrice: Double
+        totalPrice: Double,
+        combos: List<SelectedComboModel> = emptyList()
     ): LiveData<ApiResult<BookingModel?>> {
-        return repository.holdSeats(accountId, filmId, filmTitle, date, time, selectedSeatCodes, totalPrice)
+        return repository.holdSeats(accountId, filmId, filmTitle, date, time, selectedSeatCodes, totalPrice, combos)
     }
 
     fun confirmBooking(bookingId: String): LiveData<ApiResult<BookingModel?>> {
@@ -37,4 +39,6 @@ class SeatViewModel @Inject constructor(
     fun releaseBooking(bookingId: String) {
         repository.releaseBooking(bookingId)
     }
+
+    fun loadComboItems() = repository.loadComboItems()
 }
