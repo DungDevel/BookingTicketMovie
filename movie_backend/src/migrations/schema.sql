@@ -16,6 +16,7 @@ BEGIN
     );
 END
 
+
 IF NOT EXISTS (
     SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Films') AND name = 'ReleaseAt'
 )
@@ -48,8 +49,25 @@ BEGIN
         Id        NVARCHAR(50)  NOT NULL PRIMARY KEY,
         UserName  NVARCHAR(100) NOT NULL UNIQUE,
         Password  NVARCHAR(255) NOT NULL,
-        Role      NVARCHAR(20)  NOT NULL DEFAULT 'user'
+        Role      NVARCHAR(20)  NOT NULL DEFAULT 'user',
+        GoogleId  NVARCHAR(255) NULL
     );
+END
+
+
+IF NOT EXISTS (
+    SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Accounts') AND name = 'GoogleId'
+)
+BEGIN
+    ALTER TABLE Accounts ADD GoogleId NVARCHAR(255) NULL;
+END
+
+
+IF NOT EXISTS (
+    SELECT * FROM sys.indexes WHERE name = 'UX_Accounts_GoogleId' AND object_id = OBJECT_ID('Accounts')
+)
+BEGIN
+    EXEC('CREATE UNIQUE INDEX UX_Accounts_GoogleId ON Accounts(GoogleId) WHERE GoogleId IS NOT NULL');
 END
 
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Profiles')
@@ -81,7 +99,7 @@ END
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'SeatConfig')
 BEGIN
     CREATE TABLE SeatConfig (
-        SeatType     NVARCHAR(20) NOT NULL PRIMARY KEY, -- 'normal' | 'vip'
+        SeatType     NVARCHAR(20) NOT NULL PRIMARY KEY, 
         Rows         NVARCHAR(200) NOT NULL,            
         SeatsPerRow  INT NOT NULL,
         Price        FLOAT NOT NULL

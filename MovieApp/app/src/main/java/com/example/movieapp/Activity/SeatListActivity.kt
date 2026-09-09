@@ -127,9 +127,9 @@ class SeatListActivity : AppCompatActivity() {
         }
 
         dateAdapter = DateAdapter(dates) { selectedDate ->
-             val newTimes = getAvailableTimesForDate(selectedDate)
-                timeAdapter.updateTimes(newTimes)
-                loadSeats(selectedDate, timeAdapter.getSelected())
+            val newTimes = getAvailableTimesForDate(selectedDate)
+            timeAdapter.updateTimes(newTimes)
+            loadSeats(selectedDate, timeAdapter.getSelected())
             }
 
         dateRecyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)

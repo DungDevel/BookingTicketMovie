@@ -61,6 +61,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.movieapp.Utils.FavoriteManager
 import com.example.movieapp.Utils.ReleaseCountdownUtils
@@ -206,7 +207,8 @@ fun DetailScreen(film: FilmItemModel, onBackClick:() -> Unit){
                                         Text(
                                             text = "Khởi chiếu: $releaseDateText",
                                             color = Color(0xFFBDBDBD),
-                                            fontSize = 12.sp
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold
                                         )
                                     }
                                 }

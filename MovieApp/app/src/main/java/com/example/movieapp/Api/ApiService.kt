@@ -3,6 +3,7 @@ package com.example.movieapp.Api
 import com.example.movieapp.Domain.AccountModel
 import com.example.movieapp.Domain.BookingModel
 import com.example.movieapp.Domain.FilmItemModel
+import com.example.movieapp.Domain.GoogleLoginRequest
 import com.example.movieapp.Domain.ProfileModel
 import com.example.movieapp.Domain.RatingModel
 import com.example.movieapp.Domain.SeatConfigModel
@@ -33,6 +34,9 @@ interface ApiService {
 
     @DELETE("Account/{id}")
     fun deleteAccount(@Path("id") id: String): Call<Void>
+
+    @POST("Account/google")
+    fun loginWithGoogle(@Body body: GoogleLoginRequest): Call<AccountModel>
 
     @GET("Profile")
     fun getProfile(): Call<List<ProfileModel>>

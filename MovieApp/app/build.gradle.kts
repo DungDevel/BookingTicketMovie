@@ -80,4 +80,5 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
 }
