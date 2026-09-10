@@ -1,52 +1,43 @@
 const express = require('express');
 const { nanoid } = require('nanoid');
-const { sql, getPool } = require('../db');
+const { getPool } = require('../db');
 
 const router = express.Router();
 
 function mapProfile(row) {
   return {
-    id: row.Id,
-    accountId: row.AccountId || '',
-    name: row.Name || '',
-    day_of_birth: row.DayOfBirth || '',
-    telephone: row.Telephone || '',
-    gmail: row.Gmail || '',
-    avatar: row.Avatar || ''
+    id: row.id,
+    accountId: row.accountid || '',
+    name: row.name || '',
+    day_of_birth: row.dayofbirth || '',
+    telephone: row.telephone || '',
+    gmail: row.gmail || '',
+    avatar: row.avatar || ''
   };
 }
 
-// GET /Profile
 router.get('/', async (req, res) => {
   try {
     const pool = await getPool();
-    const result = await pool.request().query('SELECT * FROM Profiles');
-    res.json(result.recordset.map(mapProfile));
+    const result = await pool.query('SELECT * FROM Profiles');
+    res.json(result.rows.map(mapProfile));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST /Profile
 router.post('/', async (req, res) => {
   try {
     const pool = await getPool();
     const body = req.body;
     const id = body.id && body.id.length > 0 ? body.id : nanoid(11);
 
-    await pool.request()
-      .input('Id', sql.NVarChar, id)
-      .input('AccountId', sql.NVarChar, body.accountId || null)
-      .input('Name', sql.NVarChar, body.name || '')
-      .input('DayOfBirth', sql.NVarChar, body.day_of_birth || '')
-      .input('Telephone', sql.NVarChar, body.telephone || '')
-      .input('Gmail', sql.NVarChar, body.gmail || '')
-      .input('Avatar', sql.NVarChar(sql.MAX), body.avatar || '')
-      .query(`
-        INSERT INTO Profiles (Id, AccountId, Name, DayOfBirth, Telephone, Gmail, Avatar)
-        VALUES (@Id, @AccountId, @Name, @DayOfBirth, @Telephone, @Gmail, @Avatar)
-      `);
+    await pool.query(
+      `INSERT INTO Profiles (Id, AccountId, Name, DayOfBirth, Telephone, Gmail, Avatar)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [id, body.accountId || null, body.name || '', body.day_of_birth || '', body.telephone || '', body.gmail || '', body.avatar || '']
+    );
 
     res.status(201).json({ ...body, id });
   } catch (err) {
@@ -55,29 +46,21 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /Profile/:id
 router.put('/:id', async (req, res) => {
   try {
     const pool = await getPool();
     const { id } = req.params;
     const body = req.body;
 
-    const result = await pool.request()
-      .input('Id', sql.NVarChar, id)
-      .input('AccountId', sql.NVarChar, body.accountId || null)
-      .input('Name', sql.NVarChar, body.name || '')
-      .input('DayOfBirth', sql.NVarChar, body.day_of_birth || '')
-      .input('Telephone', sql.NVarChar, body.telephone || '')
-      .input('Gmail', sql.NVarChar, body.gmail || '')
-      .input('Avatar', sql.NVarChar(sql.MAX), body.avatar || '')
-      .query(`
-        UPDATE Profiles SET
-          AccountId=@AccountId, Name=@Name, DayOfBirth=@DayOfBirth,
-          Telephone=@Telephone, Gmail=@Gmail, Avatar=@Avatar
-        WHERE Id=@Id
-      `);
+    const result = await pool.query(
+      `UPDATE Profiles SET
+        AccountId=$2, Name=$3, DayOfBirth=$4,
+        Telephone=$5, Gmail=$6, Avatar=$7
+      WHERE Id=$1`,
+      [id, body.accountId || null, body.name || '', body.day_of_birth || '', body.telephone || '', body.gmail || '', body.avatar || '']
+    );
 
-    if (result.rowsAffected[0] === 0) {
+    if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Không tìm thấy hồ sơ' });
     }
     res.json({ ...body, id });

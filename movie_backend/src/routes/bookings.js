@@ -1,6 +1,6 @@
 const express = require('express');
 const { nanoid } = require('nanoid');
-const { sql, getPool } = require('../db');
+const { getPool } = require('../db');
 const { sendBookingConfirmationEmail } = require('../mail');
 
 const router = express.Router();
@@ -8,26 +8,25 @@ const router = express.Router();
 function mapBooking(row) {
   let combos = [];
   try {
-    combos = row.Combos ? JSON.parse(row.Combos) : [];
+    combos = row.combos ? JSON.parse(row.combos) : [];
   } catch (e) {
     combos = [];
   }
 
   return {
-    id: row.Id,
-    filmId: row.FilmId,
-    accountId: row.AccountId || '',
-    filmTitle: row.FilmTitle || '',
-    date: row.Date,
-    time: row.Time,
-    seats: (row.Seats || '').split(',').filter((s) => s.length > 0),
-    totalPrice: row.TotalPrice || 0,
-    status: row.Status,
-    createdAt: Number(row.CreatedAt),
+    id: row.id,
+    filmId: row.filmid,
+    accountId: row.accountid || '',
+    filmTitle: row.filmtitle || '',
+    date: row.date,
+    time: row.time,
+    seats: (row.seats || '').split(',').filter((s) => s.length > 0),
+    totalPrice: row.totalprice || 0,
+    status: row.status,
+    createdAt: Number(row.createdat),
     combos
   };
 }
-
 
 router.get('/', async (req, res) => {
   try {
@@ -35,20 +34,18 @@ router.get('/', async (req, res) => {
     const { filmId, date, time, accountId } = req.query;
 
     let query = 'SELECT * FROM Bookings';
-    const request = pool.request();
+    let params = [];
 
     if (filmId && date && time) {
-      query += ' WHERE FilmId = @FilmId AND [Date] = @Date AND [Time] = @Time';
-      request.input('FilmId', sql.NVarChar, filmId);
-      request.input('Date', sql.NVarChar, date);
-      request.input('Time', sql.NVarChar, time);
+      query += ' WHERE FilmId = $1 AND "Date" = $2 AND "Time" = $3';
+      params = [filmId, date, time];
     } else if (accountId) {
-      query += ' WHERE AccountId = @AccountId';
-      request.input('AccountId', sql.NVarChar, accountId);
+      query += ' WHERE AccountId = $1';
+      params = [accountId];
     }
 
-    const result = await request.query(query);
-    res.json(result.recordset.map(mapBooking));
+    const result = await pool.query(query, params);
+    res.json(result.rows.map(mapBooking));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -63,22 +60,11 @@ router.post('/', async (req, res) => {
     const createdAt = body.createdAt || Date.now();
     const combosJson = JSON.stringify(body.combos || []);
 
-    await pool.request()
-      .input('Id', sql.NVarChar, id)
-      .input('FilmId', sql.NVarChar, body.filmId)
-      .input('AccountId', sql.NVarChar, body.accountId || null)
-      .input('FilmTitle', sql.NVarChar, body.filmTitle || '')
-      .input('Date', sql.NVarChar, body.date)
-      .input('Time', sql.NVarChar, body.time)
-      .input('Seats', sql.NVarChar, (body.seats || []).join(','))
-      .input('TotalPrice', sql.Float, body.totalPrice || 0)
-      .input('Status', sql.NVarChar, body.status || 'pending')
-      .input('CreatedAt', sql.BigInt, createdAt)
-      .input('Combos', sql.NVarChar(sql.MAX), combosJson)
-      .query(`
-        INSERT INTO Bookings (Id, FilmId, AccountId, FilmTitle, [Date], [Time], Seats, TotalPrice, Status, CreatedAt, Combos)
-        VALUES (@Id, @FilmId, @AccountId, @FilmTitle, @Date, @Time, @Seats, @TotalPrice, @Status, @CreatedAt, @Combos)
-      `);
+    await pool.query(
+      `INSERT INTO Bookings (Id, FilmId, AccountId, FilmTitle, "Date", "Time", Seats, TotalPrice, Status, CreatedAt, Combos)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [id, body.filmId, body.accountId || null, body.filmTitle || '', body.date, body.time, (body.seats || []).join(','), body.totalPrice || 0, body.status || 'pending', createdAt, combosJson]
+    );
 
     res.status(201).json({ ...body, id, createdAt, status: body.status || 'pending', combos: body.combos || [] });
   } catch (err) {
@@ -88,16 +74,14 @@ router.post('/', async (req, res) => {
 });
 
 async function sendTicketEmailIfPossible(pool, bookingRow) {
-  if (!bookingRow.AccountId) {
-    console.log(`[mail] Booking ${bookingRow.Id} không có AccountId, bỏ qua gửi vé.`);
+  if (!bookingRow.accountid) {
+    console.log(`[mail] Booking ${bookingRow.id} không có AccountId, bỏ qua gửi vé.`);
     return;
   }
 
-  const profileResult = await pool.request()
-    .input('AccountId', sql.NVarChar, bookingRow.AccountId)
-    .query('SELECT TOP 1 Gmail FROM Profiles WHERE AccountId = @AccountId');
+  const profileResult = await pool.query('SELECT Gmail FROM Profiles WHERE AccountId = $1 LIMIT 1', [bookingRow.accountid]);
 
-  const gmail = profileResult.recordset[0]?.Gmail;
+  const gmail = profileResult.rows[0]?.gmail;
 
   await sendBookingConfirmationEmail({
     to: gmail,
@@ -111,26 +95,21 @@ router.patch('/:id', async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const beforeResult = await pool.request()
-      .input('Id', sql.NVarChar, id)
-      .query('SELECT Status FROM Bookings WHERE Id = @Id');
+    const beforeResult = await pool.query('SELECT Status FROM Bookings WHERE Id = $1', [id]);
 
-    if (beforeResult.recordset.length === 0) {
+    if (beforeResult.rows.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy booking' });
     }
-    const previousStatus = beforeResult.recordset[0].Status;
+    const previousStatus = beforeResult.rows[0].status;
 
-    const result = await pool.request()
-      .input('Id', sql.NVarChar, id)
-      .input('Status', sql.NVarChar, status)
-      .query('UPDATE Bookings SET Status = @Status WHERE Id = @Id');
+    const result = await pool.query('UPDATE Bookings SET Status = $2 WHERE Id = $1', [id, status]);
 
-    if (result.rowsAffected[0] === 0) {
+    if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Không tìm thấy booking' });
     }
 
-    const updated = await pool.request().input('Id', sql.NVarChar, id).query('SELECT * FROM Bookings WHERE Id = @Id');
-    const updatedRow = updated.recordset[0];
+    const updated = await pool.query('SELECT * FROM Bookings WHERE Id = $1', [id]);
+    const updatedRow = updated.rows[0];
 
     res.json(mapBooking(updatedRow));
 
@@ -150,11 +129,9 @@ router.patch('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const pool = await getPool();
-    const result = await pool.request()
-      .input('Id', sql.NVarChar, req.params.id)
-      .query('DELETE FROM Bookings WHERE Id = @Id');
+    const result = await pool.query('DELETE FROM Bookings WHERE Id = $1', [req.params.id]);
 
-    if (result.rowsAffected[0] === 0) {
+    if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Không tìm thấy booking' });
     }
     res.status(200).send();

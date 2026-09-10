@@ -10,7 +10,7 @@
         "cors": "^2.8.5",
         "express": "^5.2.1",
         "google-auth-library": "^11.0.2",
-        "mssql": "^12.7.0",
+        "pg": "^8.11.3",
         "nanoid": "^6.0.1",
         "nodemailer": "^10.0.1"
     }

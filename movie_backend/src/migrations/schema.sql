@@ -1,154 +1,93 @@
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Films')
-BEGIN
-    CREATE TABLE Films (
-        Id            NVARCHAR(50)  NOT NULL PRIMARY KEY,
-        Title         NVARCHAR(255) NOT NULL,
-        Description   NVARCHAR(MAX) NULL,
-        Poster        NVARCHAR(500) NULL,
-        [Time]        NVARCHAR(50)  NULL,
-        Trailer       NVARCHAR(500) NULL,
-        Imdb          FLOAT         NULL,
-        [Year]        INT           NULL,
-        Price         FLOAT         NULL,
-        IsNowShowing  BIT           NOT NULL DEFAULT 1,
-        IsUpcoming    BIT           NOT NULL DEFAULT 0,
-        ReleaseAt     BIGINT        NULL
-    );
-END
+CREATE TABLE IF NOT EXISTS Films (
+    Id            VARCHAR(50)  NOT NULL PRIMARY KEY,
+    Title         VARCHAR(255) NOT NULL,
+    Description   TEXT          NULL,
+    Poster        VARCHAR(500) NULL,
+    "Time"        VARCHAR(50)   NULL,
+    Trailer       VARCHAR(500) NULL,
+    Imdb          FLOAT         NULL,
+    "Year"        INT           NULL,
+    Price         FLOAT         NULL,
+    IsNowShowing  BOOLEAN       NOT NULL DEFAULT TRUE,
+    IsUpcoming    BOOLEAN       NOT NULL DEFAULT FALSE,
+    ReleaseAt     BIGINT        NULL
+);
 
-IF NOT EXISTS (
-    SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Films') AND name = 'ReleaseAt'
-)
-BEGIN
-    ALTER TABLE Films ADD ReleaseAt BIGINT NULL;
-END
+CREATE TABLE IF NOT EXISTS FilmGenres (
+    Id      SERIAL PRIMARY KEY,
+    FilmId  VARCHAR(50)  NOT NULL REFERENCES Films(Id) ON DELETE CASCADE,
+    Genre   VARCHAR(100) NOT NULL
+);
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FilmGenres')
-BEGIN
-    CREATE TABLE FilmGenres (
-        Id      INT IDENTITY PRIMARY KEY,
-        FilmId  NVARCHAR(50)  NOT NULL FOREIGN KEY REFERENCES Films(Id) ON DELETE CASCADE,
-        Genre   NVARCHAR(100) NOT NULL
-    );
-END
+CREATE TABLE IF NOT EXISTS FilmCasts (
+    Id      SERIAL PRIMARY KEY,
+    FilmId  VARCHAR(50)  NOT NULL REFERENCES Films(Id) ON DELETE CASCADE,
+    Actor   VARCHAR(255) NULL,
+    PicUrl  VARCHAR(500) NULL
+);
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FilmCasts')
-BEGIN
-    CREATE TABLE FilmCasts (
-        Id      INT IDENTITY PRIMARY KEY,
-        FilmId  NVARCHAR(50)  NOT NULL FOREIGN KEY REFERENCES Films(Id) ON DELETE CASCADE,
-        Actor   NVARCHAR(255) NULL,
-        PicUrl  NVARCHAR(500) NULL
-    );
-END
+CREATE TABLE IF NOT EXISTS Accounts (
+    Id        VARCHAR(50)  NOT NULL PRIMARY KEY,
+    UserName  VARCHAR(100) NOT NULL UNIQUE,
+    Password  VARCHAR(255) NOT NULL,
+    Role      VARCHAR(20)  NOT NULL DEFAULT 'user',
+    GoogleId  VARCHAR(255) NULL
+);
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Accounts')
-BEGIN
-    CREATE TABLE Accounts (
-        Id        NVARCHAR(50)  NOT NULL PRIMARY KEY,
-        UserName  NVARCHAR(100) NOT NULL UNIQUE,
-        Password  NVARCHAR(255) NOT NULL,
-        Role      NVARCHAR(20)  NOT NULL DEFAULT 'user',
-        GoogleId  NVARCHAR(255) NULL
-    );
-END
+CREATE UNIQUE INDEX IF NOT EXISTS UX_Accounts_GoogleId ON Accounts(GoogleId) WHERE GoogleId IS NOT NULL;
 
+CREATE TABLE IF NOT EXISTS Profiles (
+    Id           VARCHAR(50)  NOT NULL PRIMARY KEY,
+    AccountId    VARCHAR(50)  NULL REFERENCES Accounts(Id) ON DELETE SET NULL,
+    Name         VARCHAR(255) NULL,
+    DayOfBirth   VARCHAR(20)  NULL,
+    Telephone    VARCHAR(20)  NULL,
+    Gmail        VARCHAR(255) NULL,
+    Avatar       TEXT         NULL
+);
 
-IF NOT EXISTS (
-    SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Accounts') AND name = 'GoogleId'
-)
-BEGIN
-    ALTER TABLE Accounts ADD GoogleId NVARCHAR(255) NULL;
-END
+CREATE TABLE IF NOT EXISTS Reviews (
+    Id         VARCHAR(50)  NOT NULL PRIMARY KEY,
+    FilmId     VARCHAR(50)  NOT NULL REFERENCES Films(Id) ON DELETE CASCADE,
+    AccountId  VARCHAR(50)  NULL,
+    UserName   VARCHAR(100) NULL,
+    Rating     INT           NOT NULL DEFAULT 5,
+    Comment    TEXT          NULL,
+    CreateAt   BIGINT        NOT NULL
+);
 
+CREATE TABLE IF NOT EXISTS SeatConfig (
+    SeatType     VARCHAR(20) NOT NULL PRIMARY KEY,
+    Rows         VARCHAR(200) NOT NULL,
+    SeatsPerRow  INT NOT NULL,
+    Price        FLOAT NOT NULL
+);
 
-IF NOT EXISTS (
-    SELECT * FROM sys.indexes WHERE name = 'UX_Accounts_GoogleId' AND object_id = OBJECT_ID('Accounts')
-)
-BEGIN
-    EXEC('CREATE UNIQUE INDEX UX_Accounts_GoogleId ON Accounts(GoogleId) WHERE GoogleId IS NOT NULL');
-END
+CREATE TABLE IF NOT EXISTS Bookings (
+    Id          VARCHAR(50)  NOT NULL PRIMARY KEY,
+    FilmId      VARCHAR(50)  NOT NULL,
+    AccountId   VARCHAR(50)  NULL,
+    FilmTitle   VARCHAR(255) NULL,
+    "Date"      VARCHAR(20)  NOT NULL,
+    "Time"      VARCHAR(20)  NOT NULL,
+    Seats       VARCHAR(500) NOT NULL,
+    TotalPrice  FLOAT NOT NULL DEFAULT 0,
+    Status      VARCHAR(20)  NOT NULL DEFAULT 'pending',
+    CreatedAt   BIGINT NOT NULL,
+    Combos      TEXT         NULL
+);
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Profiles')
-BEGIN
-    CREATE TABLE Profiles (
-        Id           NVARCHAR(50)  NOT NULL PRIMARY KEY,
-        AccountId    NVARCHAR(50)  NULL FOREIGN KEY REFERENCES Accounts(Id) ON DELETE SET NULL,
-        Name         NVARCHAR(255) NULL,
-        DayOfBirth   NVARCHAR(20)  NULL,
-        Telephone    NVARCHAR(20)  NULL,
-        Gmail        NVARCHAR(255) NULL,
-        Avatar       NVARCHAR(MAX) NULL
-    );
-END
+CREATE INDEX IF NOT EXISTS IX_Bookings_Film_Date_Time ON Bookings(FilmId, "Date", "Time");
+CREATE INDEX IF NOT EXISTS IX_Bookings_AccountId ON Bookings(AccountId);
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Reviews')
-BEGIN
-    CREATE TABLE Reviews (
-        Id         NVARCHAR(50)  NOT NULL PRIMARY KEY,
-        FilmId     NVARCHAR(50)  NOT NULL FOREIGN KEY REFERENCES Films(Id) ON DELETE CASCADE,
-        AccountId  NVARCHAR(50)  NULL,
-        UserName   NVARCHAR(100) NULL,
-        Rating     INT           NOT NULL DEFAULT 5,
-        Comment    NVARCHAR(MAX) NULL,
-        CreateAt   BIGINT        NOT NULL
-    );
-END
+CREATE TABLE IF NOT EXISTS ComboItems (
+    Id          VARCHAR(50)  NOT NULL PRIMARY KEY,
+    Name        VARCHAR(255) NOT NULL,
+    Description VARCHAR(500) NULL,
+    Price       FLOAT         NOT NULL DEFAULT 0,
+    Category    VARCHAR(20)  NOT NULL DEFAULT 'popcorn',
+    ImageUrl    VARCHAR(500) NULL,
+    IsActive    BOOLEAN       NOT NULL DEFAULT TRUE
+);
 
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'SeatConfig')
-BEGIN
-    CREATE TABLE SeatConfig (
-        SeatType     NVARCHAR(20) NOT NULL PRIMARY KEY, 
-        Rows         NVARCHAR(200) NOT NULL,            
-        SeatsPerRow  INT NOT NULL,
-        Price        FLOAT NOT NULL
-    );
-END
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Bookings')
-BEGIN
-    CREATE TABLE Bookings (
-        Id          NVARCHAR(50)  NOT NULL PRIMARY KEY,
-        FilmId      NVARCHAR(50)  NOT NULL,
-        AccountId   NVARCHAR(50)  NULL,
-        FilmTitle   NVARCHAR(255) NULL,
-        [Date]      NVARCHAR(20)  NOT NULL,
-        [Time]      NVARCHAR(20)  NOT NULL,
-        Seats       NVARCHAR(500) NOT NULL,             
-        TotalPrice  FLOAT NOT NULL DEFAULT 0,
-        Status      NVARCHAR(20)  NOT NULL DEFAULT 'pending',
-        CreatedAt   BIGINT NOT NULL,
-        Combos      NVARCHAR(MAX) NULL                
-    );
-END
-
-
-IF NOT EXISTS (
-    SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Bookings') AND name = 'Combos'
-)
-BEGIN
-    ALTER TABLE Bookings ADD Combos NVARCHAR(MAX) NULL;
-END
-
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Bookings_Film_Date_Time')
-    CREATE INDEX IX_Bookings_Film_Date_Time ON Bookings(FilmId, [Date], [Time]);
-
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Bookings_AccountId')
-    CREATE INDEX IX_Bookings_AccountId ON Bookings(AccountId);
-
-
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ComboItems')
-BEGIN
-    CREATE TABLE ComboItems (
-        Id          NVARCHAR(50)  NOT NULL PRIMARY KEY,
-        Name        NVARCHAR(255) NOT NULL,
-        Description NVARCHAR(500) NULL,
-        Price       FLOAT         NOT NULL DEFAULT 0,
-        Category    NVARCHAR(20)  NOT NULL DEFAULT 'popcorn',
-        ImageUrl    NVARCHAR(500) NULL,
-        IsActive    BIT           NOT NULL DEFAULT 1
-    );
-END
-
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Reviews_FilmId')
-    CREATE INDEX IX_Reviews_FilmId ON Reviews(FilmId);
+CREATE INDEX IF NOT EXISTS IX_Reviews_FilmId ON Reviews(FilmId);

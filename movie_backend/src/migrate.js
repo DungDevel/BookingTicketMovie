@@ -1,8 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const sql = require('mssql');
 const { nanoid } = require('nanoid');
-const { dbConfig, masterConfig } = require('./db');
+const { getPool, query } = require('./db');
 
 const SCHEMA_PATH = path.join(__dirname, 'migrations', 'schema.sql');
 const SEED_PATH = path.join(__dirname, 'migrations', 'seed-data.json');
@@ -11,42 +10,31 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function connectWithRetry(config, label, maxAttempts = 20, delayMs = 3000) {
+async function connectWithRetry(maxAttempts = 20, delayMs = 3000) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const pool = await new sql.ConnectionPool(config).connect();
-      console.log(`[migrate] Kết nối "${label}" thành công (lần thử ${attempt}).`);
+      const pool = await getPool();
+      await pool.query('SELECT 1');
+      console.log(`[migrate] Kết nối database thành công (lần thử ${attempt}).`);
       return pool;
     } catch (err) {
-      console.log(`[migrate] "${label}" chưa sẵn sàng (lần thử ${attempt}/${maxAttempts}): ${err.message}`);
+      console.log(`[migrate] Database chưa sẵn sàng (lần thử ${attempt}/${maxAttempts}): ${err.message}`);
       if (attempt === maxAttempts) throw err;
       await delay(delayMs);
     }
   }
 }
 
-async function ensureDatabaseExists() {
-  const pool = await connectWithRetry(masterConfig, 'master');
-  await pool.request().batch(`
-    IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = '${dbConfig.database}')
-    BEGIN
-      CREATE DATABASE [${dbConfig.database}];
-    END
-  `);
-  await pool.close();
-}
-
 async function applySchema(pool) {
   const schemaSql = fs.readFileSync(SCHEMA_PATH, 'utf8');
-  await pool.request().batch(schemaSql);
+  await pool.query(schemaSql);
   console.log('[migrate] Đã áp dụng schema.');
 }
 
 async function isAlreadySeeded(pool) {
-  const result = await pool.request().query('SELECT COUNT(*) AS total FROM Films');
-  return result.recordset[0].total > 0;
+  const result = await pool.query('SELECT COUNT(*) AS total FROM Films');
+  return parseInt(result.rows[0].total) > 0;
 }
-
 
 const DEFAULT_COMBO_ITEMS = [
   { name: 'Bắp rang bơ (nhỏ)', description: 'Bắp rang bơ size nhỏ', price: 35000, category: 'popcorn', imageUrl: 'https://res.cloudinary.com/vuyb39ll/image/upload/v1788943214/Bap.jpg' },
@@ -62,24 +50,17 @@ const DEFAULT_COMBO_ITEMS = [
 ];
 
 async function seedComboItemsIfEmpty(pool) {
-  const countResult = await pool.request().query('SELECT COUNT(*) AS total FROM ComboItems');
-  if (countResult.recordset[0].total > 0) {
+  const countResult = await pool.query('SELECT COUNT(*) AS total FROM ComboItems');
+  if (parseInt(countResult.rows[0].total) > 0) {
     return;
   }
 
   for (const item of DEFAULT_COMBO_ITEMS) {
-    await pool.request()
-      .input('Id', sql.NVarChar, nanoid(11))
-      .input('Name', sql.NVarChar, item.name)
-      .input('Description', sql.NVarChar, item.description)
-      .input('Price', sql.Float, item.price)
-      .input('Category', sql.NVarChar, item.category)
-      .input('ImageUrl', sql.NVarChar, '')
-      .input('IsActive', sql.Bit, 1)
-      .query(`
-        INSERT INTO ComboItems (Id, Name, Description, Price, Category, ImageUrl, IsActive)
-        VALUES (@Id, @Name, @Description, @Price, @Category, @ImageUrl, @IsActive)
-      `);
+    await pool.query(
+      `INSERT INTO ComboItems (Id, Name, Description, Price, Category, ImageUrl, IsActive)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [nanoid(11), item.name, item.description, item.price, item.category, '', true]
+    );
   }
   console.log(`[migrate] Đã seed ${DEFAULT_COMBO_ITEMS.length} sản phẩm bắp/nước/combo.`);
 }
@@ -89,80 +70,80 @@ async function seedData(pool) {
   const data = JSON.parse(raw);
 
   for (const film of data.Item || []) {
-    await pool.request()
-      .input('Id', sql.NVarChar, film.id)
-      .input('Title', sql.NVarChar, film.Title)
-      .input('Description', sql.NVarChar(sql.MAX), film.Description || '')
-      .input('Poster', sql.NVarChar, film.Poster || '')
-      .input('Time', sql.NVarChar, film.Time || '')
-      .input('Trailer', sql.NVarChar, film.Trailer || '')
-      .input('Imdb', sql.Float, film.Imdb || 0)
-      .input('Year', sql.Int, film.Year || 0)
-      .input('Price', sql.Float, film.price || 0)
-      .input('IsNowShowing', sql.Bit, film.IsNowShowing ? 1 : 0)
-      .input('IsUpcoming', sql.Bit, film.IsUpcoming ? 1 : 0)
-      .input('ReleaseAt', sql.BigInt, film.ReleaseAt || null)
-      .query(`
-        INSERT INTO Films (Id, Title, Description, Poster, [Time], Trailer, Imdb, [Year], Price, IsNowShowing, IsUpcoming, ReleaseAt)
-        VALUES (@Id, @Title, @Description, @Poster, @Time, @Trailer, @Imdb, @Year, @Price, @IsNowShowing, @IsUpcoming, @ReleaseAt)
-      `);
+    await pool.query(
+      `INSERT INTO Films (Id, Title, Description, Poster, "Time", Trailer, Imdb, "Year", Price, IsNowShowing, IsUpcoming, ReleaseAt)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+      [
+        film.id,
+        film.Title,
+        film.Description || '',
+        film.Poster || '',
+        film.Time || '',
+        film.Trailer || '',
+        film.Imdb || 0,
+        film.Year || 0,
+        film.price || 0,
+        film.IsNowShowing ? true : false,
+        film.IsUpcoming ? true : false,
+        film.ReleaseAt || null
+      ]
+    );
 
     for (const genre of film.Genre || []) {
-      await pool.request()
-        .input('FilmId', sql.NVarChar, film.id)
-        .input('Genre', sql.NVarChar, genre)
-        .query('INSERT INTO FilmGenres (FilmId, Genre) VALUES (@FilmId, @Genre)');
+      await pool.query(
+        'INSERT INTO FilmGenres (FilmId, Genre) VALUES ($1, $2)',
+        [film.id, genre]
+      );
     }
 
     for (const cast of film.Casts || []) {
-      await pool.request()
-        .input('FilmId', sql.NVarChar, film.id)
-        .input('Actor', sql.NVarChar, cast.Actor || '')
-        .input('PicUrl', sql.NVarChar, cast.PicUrl || '')
-        .query('INSERT INTO FilmCasts (FilmId, Actor, PicUrl) VALUES (@FilmId, @Actor, @PicUrl)');
+      await pool.query(
+        'INSERT INTO FilmCasts (FilmId, Actor, PicUrl) VALUES ($1, $2, $3)',
+        [film.id, cast.Actor || '', cast.PicUrl || '']
+      );
     }
   }
   console.log(`[migrate] Đã seed ${data.Item?.length || 0} phim.`);
 
   for (const acc of data.Account || []) {
-    await pool.request()
-      .input('Id', sql.NVarChar, acc.id)
-      .input('UserName', sql.NVarChar, acc.userName)
-      .input('Password', sql.NVarChar, acc.password)
-      .input('Role', sql.NVarChar, acc.role || 'user')
-      .query('INSERT INTO Accounts (Id, UserName, Password, Role) VALUES (@Id, @UserName, @Password, @Role)');
+    await pool.query(
+      'INSERT INTO Accounts (Id, UserName, Password, Role) VALUES ($1, $2, $3, $4)',
+      [acc.id, acc.userName, acc.password, acc.role || 'user']
+    );
   }
   console.log(`[migrate] Đã seed ${data.Account?.length || 0} tài khoản.`);
 
   for (const p of data.Profile || []) {
-    await pool.request()
-      .input('Id', sql.NVarChar, p.id)
-      .input('AccountId', sql.NVarChar, p.accountId || null)
-      .input('Name', sql.NVarChar, p.name || '')
-      .input('DayOfBirth', sql.NVarChar, p.day_of_birth || '')
-      .input('Telephone', sql.NVarChar, p.telephone || '')
-      .input('Gmail', sql.NVarChar, p.gmail || '')
-      .input('Avatar', sql.NVarChar(sql.MAX), p.avatar || '')
-      .query(`
-        INSERT INTO Profiles (Id, AccountId, Name, DayOfBirth, Telephone, Gmail, Avatar)
-        VALUES (@Id, @AccountId, @Name, @DayOfBirth, @Telephone, @Gmail, @Avatar)
-      `);
+    await pool.query(
+      `INSERT INTO Profiles (Id, AccountId, Name, DayOfBirth, Telephone, Gmail, Avatar)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        p.id,
+        p.accountId || null,
+        p.name || '',
+        p.day_of_birth || '',
+        p.telephone || '',
+        p.gmail || '',
+        p.avatar || ''
+      ]
+    );
   }
   console.log(`[migrate] Đã seed ${data.Profile?.length || 0} hồ sơ.`);
 
   for (const r of data.Reviews || []) {
-    await pool.request()
-      .input('Id', sql.NVarChar, r.id)
-      .input('FilmId', sql.NVarChar, r.filmId)
-      .input('AccountId', sql.NVarChar, r.accountId || null)
-      .input('UserName', sql.NVarChar, r.userName || '')
-      .input('Rating', sql.Int, r.rating || 5)
-      .input('Comment', sql.NVarChar(sql.MAX), r.comment || '')
-      .input('CreateAt', sql.BigInt, r.createAt || Date.now())
-      .query(`
-        INSERT INTO Reviews (Id, FilmId, AccountId, UserName, Rating, Comment, CreateAt)
-        VALUES (@Id, @FilmId, @AccountId, @UserName, @Rating, @Comment, @CreateAt)
-      `);
+    await pool.query(
+      `INSERT INTO Reviews (Id, FilmId, AccountId, UserName, Rating, Comment, CreateAt)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        r.id,
+        r.filmId,
+        r.accountId || null,
+        r.userName || '',
+        r.rating || 5,
+        r.comment || '',
+        r.createAt || Date.now()
+      ]
+    );
   }
   console.log(`[migrate] Đã seed ${data.Reviews?.length || 0} đánh giá.`);
 
@@ -170,41 +151,39 @@ async function seedData(pool) {
     for (const type of ['normal', 'vip']) {
       const cfg = data.SeatConfig[type];
       if (!cfg) continue;
-      await pool.request()
-        .input('SeatType', sql.NVarChar, type)
-        .input('Rows', sql.NVarChar, (cfg.rows || []).join(','))
-        .input('SeatsPerRow', sql.Int, cfg.seatsPerRow || 0)
-        .input('Price', sql.Float, cfg.price || 0)
-        .query('INSERT INTO SeatConfig (SeatType, Rows, SeatsPerRow, Price) VALUES (@SeatType, @Rows, @SeatsPerRow, @Price)');
+      await pool.query(
+        'INSERT INTO SeatConfig (SeatType, Rows, SeatsPerRow, Price) VALUES ($1, $2, $3, $4)',
+        [type, (cfg.rows || []).join(','), cfg.seatsPerRow || 0, cfg.price || 0]
+      );
     }
     console.log('[migrate] Đã seed cấu hình ghế (normal + vip).');
   }
 
   for (const b of data.Bookings || []) {
-    await pool.request()
-      .input('Id', sql.NVarChar, b.id)
-      .input('FilmId', sql.NVarChar, b.filmId)
-      .input('AccountId', sql.NVarChar, b.accountId || null)
-      .input('FilmTitle', sql.NVarChar, b.filmTitle || '')
-      .input('Date', sql.NVarChar, b.date)
-      .input('Time', sql.NVarChar, b.time)
-      .input('Seats', sql.NVarChar, (b.seats || []).join(','))
-      .input('TotalPrice', sql.Float, b.totalPrice || 0)
-      .input('Status', sql.NVarChar, b.status || 'pending')
-      .input('CreatedAt', sql.BigInt, b.createdAt || Date.now())
-      .query(`
-        INSERT INTO Bookings (Id, FilmId, AccountId, FilmTitle, [Date], [Time], Seats, TotalPrice, Status, CreatedAt)
-        VALUES (@Id, @FilmId, @AccountId, @FilmTitle, @Date, @Time, @Seats, @TotalPrice, @Status, @CreatedAt)
-      `);
+    await pool.query(
+      `INSERT INTO Bookings (Id, FilmId, AccountId, FilmTitle, "Date", "Time", Seats, TotalPrice, Status, CreatedAt)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [
+        b.id,
+        b.filmId,
+        b.accountId || null,
+        b.filmTitle || '',
+        b.date,
+        b.time,
+        (b.seats || []).join(','),
+        b.totalPrice || 0,
+        b.status || 'pending',
+        b.createdAt || Date.now()
+      ]
+    );
   }
   console.log(`[migrate] Đã seed ${data.Bookings?.length || 0} lượt đặt vé.`);
 }
 
 async function runMigrations() {
   console.log('[migrate] Bắt đầu migrate database...');
-  await ensureDatabaseExists();
 
-  const pool = await connectWithRetry(dbConfig, dbConfig.database);
+  const pool = await connectWithRetry();
   await applySchema(pool);
 
   const seeded = await isAlreadySeeded(pool);
@@ -216,7 +195,6 @@ async function runMigrations() {
 
   await seedComboItemsIfEmpty(pool);
 
-  await pool.close();
   console.log('[migrate] Hoàn tất migrate.');
 }
 

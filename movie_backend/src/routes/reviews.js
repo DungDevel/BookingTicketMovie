@@ -1,18 +1,18 @@
 const express = require('express');
 const { nanoid } = require('nanoid');
-const { sql, getPool } = require('../db');
+const { getPool } = require('../db');
 
 const router = express.Router();
 
 function mapReview(row) {
   return {
-    id: row.Id,
-    filmId: row.FilmId,
-    accountId: row.AccountId || '',
-    userName: row.UserName || '',
-    rating: row.Rating,
-    comment: row.Comment || '',
-    createAt: Number(row.CreateAt)
+    id: row.id,
+    filmId: row.filmid,
+    accountId: row.accountid || '',
+    userName: row.username || '',
+    rating: row.rating,
+    comment: row.comment || '',
+    createAt: Number(row.createat)
   };
 }
 
@@ -21,21 +21,21 @@ router.get('/', async (req, res) => {
     const pool = await getPool();
     const { filmId } = req.query;
 
-    const request = pool.request();
     let query = 'SELECT * FROM Reviews';
+    let params = [];
+
     if (filmId) {
-      query += ' WHERE FilmId = @FilmId';
-      request.input('FilmId', sql.NVarChar, filmId);
+      query += ' WHERE FilmId = $1';
+      params = [filmId];
     }
 
-    const result = await request.query(query);
-    res.json(result.recordset.map(mapReview));
+    const result = await pool.query(query, params);
+    res.json(result.rows.map(mapReview));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 router.post('/', async (req, res) => {
   try {
@@ -44,18 +44,11 @@ router.post('/', async (req, res) => {
     const id = body.id && body.id.length > 0 ? body.id : nanoid(11);
     const createAt = body.createAt || Date.now();
 
-    await pool.request()
-      .input('Id', sql.NVarChar, id)
-      .input('FilmId', sql.NVarChar, body.filmId)
-      .input('AccountId', sql.NVarChar, body.accountId || null)
-      .input('UserName', sql.NVarChar, body.userName || '')
-      .input('Rating', sql.Int, body.rating || 5)
-      .input('Comment', sql.NVarChar(sql.MAX), body.comment || '')
-      .input('CreateAt', sql.BigInt, createAt)
-      .query(`
-        INSERT INTO Reviews (Id, FilmId, AccountId, UserName, Rating, Comment, CreateAt)
-        VALUES (@Id, @FilmId, @AccountId, @UserName, @Rating, @Comment, @CreateAt)
-      `);
+    await pool.query(
+      `INSERT INTO Reviews (Id, FilmId, AccountId, UserName, Rating, Comment, CreateAt)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [id, body.filmId, body.accountId || null, body.userName || '', body.rating || 5, body.comment || '', createAt]
+    );
 
     res.status(201).json({ ...body, id, createAt });
   } catch (err) {
@@ -70,18 +63,17 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const body = req.body;
 
-    const result = await pool.request()
-      .input('Id', sql.NVarChar, id)
-      .input('Rating', sql.Int, body.rating || 5)
-      .input('Comment', sql.NVarChar(sql.MAX), body.comment || '')
-      .query('UPDATE Reviews SET Rating = @Rating, Comment = @Comment WHERE Id = @Id');
+    const result = await pool.query(
+      'UPDATE Reviews SET Rating = $2, Comment = $3 WHERE Id = $1',
+      [id, body.rating || 5, body.comment || '']
+    );
 
-    if (result.rowsAffected[0] === 0) {
+    if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Không tìm thấy đánh giá' });
     }
 
-    const updated = await pool.request().input('Id', sql.NVarChar, id).query('SELECT * FROM Reviews WHERE Id = @Id');
-    res.json(mapReview(updated.recordset[0]));
+    const updated = await pool.query('SELECT * FROM Reviews WHERE Id = $1', [id]);
+    res.json(mapReview(updated.rows[0]));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -91,11 +83,9 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const pool = await getPool();
-    const result = await pool.request()
-      .input('Id', sql.NVarChar, req.params.id)
-      .query('DELETE FROM Reviews WHERE Id = @Id');
+    const result = await pool.query('DELETE FROM Reviews WHERE Id = $1', [req.params.id]);
 
-    if (result.rowsAffected[0] === 0) {
+    if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Không tìm thấy đánh giá' });
     }
     res.status(200).send();

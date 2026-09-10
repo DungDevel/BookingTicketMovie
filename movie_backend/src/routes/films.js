@@ -1,38 +1,37 @@
 const express = require('express');
 const { nanoid } = require('nanoid');
-const { sql, getPool } = require('../db');
+const { getPool } = require('../db');
 
 const router = express.Router();
 
 async function promoteDueFilms(pool) {
   const now = Date.now();
-  await pool.request()
-    .input('Now', sql.BigInt, now)
-    .query(`
-      UPDATE Films
-      SET IsUpcoming = 0, IsNowShowing = 1
-      WHERE IsUpcoming = 1 AND ReleaseAt IS NOT NULL AND ReleaseAt <= @Now
-    `);
+  await pool.query(
+    `UPDATE Films
+     SET IsUpcoming = false, IsNowShowing = true
+     WHERE IsUpcoming = true AND ReleaseAt IS NOT NULL AND ReleaseAt <= $1`,
+    [now]
+  );
 }
 
 async function fetchAllFilms(pool) {
   const [filmsResult, genresResult, castsResult] = await Promise.all([
-    pool.request().query('SELECT * FROM Films'),
-    pool.request().query('SELECT * FROM FilmGenres'),
-    pool.request().query('SELECT * FROM FilmCasts')
+    pool.query('SELECT * FROM Films'),
+    pool.query('SELECT * FROM FilmGenres'),
+    pool.query('SELECT * FROM FilmCasts')
   ]);
 
   const genresByFilm = {};
-  for (const g of genresResult.recordset) {
+  for (const g of genresResult.rows) {
     (genresByFilm[g.FilmId] ??= []).push(g.Genre);
   }
 
   const castsByFilm = {};
-  for (const c of castsResult.recordset) {
+  for (const c of castsResult.rows) {
     (castsByFilm[c.FilmId] ??= []).push({ PicUrl: c.PicUrl || '', Actor: c.Actor || '' });
   }
 
-  return filmsResult.recordset.map((f) => mapFilm(f, genresByFilm[f.Id] || [], castsByFilm[f.Id] || []));
+  return filmsResult.rows.map((f) => mapFilm(f, genresByFilm[f.Id] || [], castsByFilm[f.Id] || []));
 }
 
 function mapFilm(row, genres, casts) {
@@ -55,19 +54,19 @@ function mapFilm(row, genres, casts) {
 }
 
 async function fetchOneFilm(pool, id) {
-  const filmResult = await pool.request().input('Id', sql.NVarChar, id).query('SELECT * FROM Films WHERE Id = @Id');
-  const row = filmResult.recordset[0];
+  const filmResult = await pool.query('SELECT * FROM Films WHERE Id = $1', [id]);
+  const row = filmResult.rows[0];
   if (!row) return null;
 
   const [genresResult, castsResult] = await Promise.all([
-    pool.request().input('FilmId', sql.NVarChar, id).query('SELECT Genre FROM FilmGenres WHERE FilmId = @FilmId'),
-    pool.request().input('FilmId', sql.NVarChar, id).query('SELECT Actor, PicUrl FROM FilmCasts WHERE FilmId = @FilmId')
+    pool.query('SELECT Genre FROM FilmGenres WHERE FilmId = $1', [id]),
+    pool.query('SELECT Actor, PicUrl FROM FilmCasts WHERE FilmId = $1', [id])
   ]);
 
   return mapFilm(
     row,
-    genresResult.recordset.map((g) => g.Genre),
-    castsResult.recordset.map((c) => ({ PicUrl: c.PicUrl || '', Actor: c.Actor || '' }))
+    genresResult.rows.map((g) => g.Genre),
+    castsResult.rows.map((c) => ({ PicUrl: c.PicUrl || '', Actor: c.Actor || '' }))
   );
 }
 
@@ -97,36 +96,30 @@ router.post('/', async (req, res) => {
       isNowShowing = true;
     }
 
-    await pool.request()
-      .input('Id', sql.NVarChar, id)
-      .input('Title', sql.NVarChar, body.Title || '')
-      .input('Description', sql.NVarChar(sql.MAX), body.Description || '')
-      .input('Poster', sql.NVarChar, body.Poster || '')
-      .input('Time', sql.NVarChar, body.Time || '')
-      .input('Trailer', sql.NVarChar, body.Trailer || '')
-      .input('Imdb', sql.Float, body.Imdb || 0)
-      .input('Year', sql.Int, body.Year || 0)
-      .input('Price', sql.Float, body.price || 0)
-      .input('IsNowShowing', sql.Bit, isNowShowing ? 1 : 0)
-      .input('IsUpcoming', sql.Bit, isUpcoming ? 1 : 0)
-      .input('ReleaseAt', sql.BigInt, releaseAt)
-      .query(`
-        INSERT INTO Films (Id, Title, Description, Poster, [Time], Trailer, Imdb, [Year], Price, IsNowShowing, IsUpcoming, ReleaseAt)
-        VALUES (@Id, @Title, @Description, @Poster, @Time, @Trailer, @Imdb, @Year, @Price, @IsNowShowing, @IsUpcoming, @ReleaseAt)
-      `);
+    await pool.query(
+      `INSERT INTO Films (Id, Title, Description, Poster, "Time", Trailer, Imdb, "Year", Price, IsNowShowing, IsUpcoming, ReleaseAt)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+      [
+        id,
+        body.Title || '',
+        body.Description || '',
+        body.Poster || '',
+        body.Time || '',
+        body.Trailer || '',
+        body.Imdb || 0,
+        body.Year || 0,
+        body.price || 0,
+        isNowShowing,
+        isUpcoming,
+        releaseAt
+      ]
+    );
 
     for (const genre of body.Genre || []) {
-      await pool.request()
-        .input('FilmId', sql.NVarChar, id)
-        .input('Genre', sql.NVarChar, genre)
-        .query('INSERT INTO FilmGenres (FilmId, Genre) VALUES (@FilmId, @Genre)');
+      await pool.query('INSERT INTO FilmGenres (FilmId, Genre) VALUES ($1, $2)', [id, genre]);
     }
     for (const cast of body.Casts || []) {
-      await pool.request()
-        .input('FilmId', sql.NVarChar, id)
-        .input('Actor', sql.NVarChar, cast.Actor || '')
-        .input('PicUrl', sql.NVarChar, cast.PicUrl || '')
-        .query('INSERT INTO FilmCasts (FilmId, Actor, PicUrl) VALUES (@FilmId, @Actor, @PicUrl)');
+      await pool.query('INSERT INTO FilmCasts (FilmId, Actor, PicUrl) VALUES ($1, $2, $3)', [id, cast.Actor || '', cast.PicUrl || '']);
     }
 
     const created = await fetchOneFilm(pool, id);
@@ -151,46 +144,40 @@ router.put('/:id', async (req, res) => {
       isNowShowing = true;
     }
 
-    const result = await pool.request()
-      .input('Id', sql.NVarChar, id)
-      .input('Title', sql.NVarChar, body.Title || '')
-      .input('Description', sql.NVarChar(sql.MAX), body.Description || '')
-      .input('Poster', sql.NVarChar, body.Poster || '')
-      .input('Time', sql.NVarChar, body.Time || '')
-      .input('Trailer', sql.NVarChar, body.Trailer || '')
-      .input('Imdb', sql.Float, body.Imdb || 0)
-      .input('Year', sql.Int, body.Year || 0)
-      .input('Price', sql.Float, body.price || 0)
-      .input('IsNowShowing', sql.Bit, isNowShowing ? 1 : 0)
-      .input('IsUpcoming', sql.Bit, isUpcoming ? 1 : 0)
-      .input('ReleaseAt', sql.BigInt, releaseAt)
-      .query(`
-        UPDATE Films SET
-          Title = @Title, Description = @Description, Poster = @Poster, [Time] = @Time,
-          Trailer = @Trailer, Imdb = @Imdb, [Year] = @Year, Price = @Price,
-          IsNowShowing = @IsNowShowing, IsUpcoming = @IsUpcoming, ReleaseAt = @ReleaseAt
-        WHERE Id = @Id
-      `);
+    const result = await pool.query(
+      `UPDATE Films SET
+        Title = $2, Description = $3, Poster = $4, "Time" = $5,
+        Trailer = $6, Imdb = $7, "Year" = $8, Price = $9,
+        IsNowShowing = $10, IsUpcoming = $11, ReleaseAt = $12
+        WHERE Id = $1`,
+      [
+        id,
+        body.Title || '',
+        body.Description || '',
+        body.Poster || '',
+        body.Time || '',
+        body.Trailer || '',
+        body.Imdb || 0,
+        body.Year || 0,
+        body.price || 0,
+        isNowShowing,
+        isUpcoming,
+        releaseAt
+      ]
+    );
 
-    if (result.rowsAffected[0] === 0) {
+    if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Không tìm thấy phim' });
     }
 
-    await pool.request().input('FilmId', sql.NVarChar, id).query('DELETE FROM FilmGenres WHERE FilmId = @FilmId');
-    await pool.request().input('FilmId', sql.NVarChar, id).query('DELETE FROM FilmCasts WHERE FilmId = @FilmId');
+    await pool.query('DELETE FROM FilmGenres WHERE FilmId = $1', [id]);
+    await pool.query('DELETE FROM FilmCasts WHERE FilmId = $1', [id]);
 
     for (const genre of body.Genre || []) {
-      await pool.request()
-        .input('FilmId', sql.NVarChar, id)
-        .input('Genre', sql.NVarChar, genre)
-        .query('INSERT INTO FilmGenres (FilmId, Genre) VALUES (@FilmId, @Genre)');
+      await pool.query('INSERT INTO FilmGenres (FilmId, Genre) VALUES ($1, $2)', [id, genre]);
     }
     for (const cast of body.Casts || []) {
-      await pool.request()
-        .input('FilmId', sql.NVarChar, id)
-        .input('Actor', sql.NVarChar, cast.Actor || '')
-        .input('PicUrl', sql.NVarChar, cast.PicUrl || '')
-        .query('INSERT INTO FilmCasts (FilmId, Actor, PicUrl) VALUES (@FilmId, @Actor, @PicUrl)');
+      await pool.query('INSERT INTO FilmCasts (FilmId, Actor, PicUrl) VALUES ($1, $2, $3)', [id, cast.Actor || '', cast.PicUrl || '']);
     }
 
     const updated = await fetchOneFilm(pool, id);
@@ -204,11 +191,9 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const pool = await getPool();
-    const result = await pool.request()
-      .input('Id', sql.NVarChar, req.params.id)
-      .query('DELETE FROM Films WHERE Id = @Id');
+    const result = await pool.query('DELETE FROM Films WHERE Id = $1', [req.params.id]);
 
-    if (result.rowsAffected[0] === 0) {
+    if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Không tìm thấy phim' });
     }
     res.status(200).send();

@@ -1,27 +1,33 @@
-const sql = require('mssql');
+const { Pool } = require('pg');
 
 const dbConfig = {
-    server: process.env.DB_SERVER || 'localhost',
-    port: parseInt(process.env.DB_PORT || '1433', 10),
-    user: process.env.DB_USER || 'sa',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432', 10),
+    user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME || 'MovieAppDb',
-    options: {
-        encrypt: false,
-        trustServerCertificate: true
-    },
-    pool: { max: 10, min: 0, idleTimeoutMillis: 30000 }
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
 };
 
-const masterConfig = { ...dbConfig, database: 'master' };
+let pool = null;
 
-let poolPromise = null;
+async function getPool() {
+    if (!pool) {
+        pool = new Pool(dbConfig);
 
-async function getPool(){
-    if (!poolPromise){
-        poolPromise = new sql.ConnectionPool(dbConfig).connect();
+        pool.on('error', (err) => {
+            console.error('[db] Lỗi kết nối pool:', err);
+        });
     }
-    return poolPromise
+    return pool;
 }
 
-module.exports = { sql, getPool, dbConfig, masterConfig }
+async function query(text, params) {
+    const client = await getPool();
+    return client.query(text, params);
+}
+
+module.exports = { getPool, query, dbConfig };

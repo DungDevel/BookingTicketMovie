@@ -6,15 +6,15 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const pool = await getPool();
-    const result = await pool.request().query('SELECT * FROM SeatConfig');
+    const result = await pool.query('SELECT * FROM SeatConfig');
 
     const config = { normal: { rows: [], seatsPerRow: 0, price: 0 }, vip: { rows: [], seatsPerRow: 0, price: 0 } };
-    for (const row of result.recordset) {
-      const key = row.SeatType === 'vip' ? 'vip' : 'normal';
+    for (const row of result.rows) {
+      const key = row.seattype === 'vip' ? 'vip' : 'normal';
       config[key] = {
-        rows: (row.Rows || '').split(',').filter((r) => r.length > 0),
-        seatsPerRow: row.SeatsPerRow,
-        price: row.Price
+        rows: (row.rows || '').split(',').filter((r) => r.length > 0),
+        seatsPerRow: row.seatsperrow,
+        price: row.price
       };
     }
 
