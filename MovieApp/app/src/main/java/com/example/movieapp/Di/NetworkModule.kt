@@ -20,7 +20,7 @@ object NetworkModule{
     // "https://movieapp-api-xxxx.onrender.com/" (LUÔN có dấu "/" ở cuối).
     // "http://10.0.2.2:3000/" chỉ dùng được khi chạy Android Emulator + backend chạy local
     // trên chính máy tính đó — sẽ KHÔNG hoạt động khi cài APK ra điện thoại thật.
-    private const val BASE_URL = "https://movieapp-api.onrender.com/"
+    private const val BASE_URL = "https://movieapp-api-zky8.onrender.com/"
 
     @Provides
     @Singleton
