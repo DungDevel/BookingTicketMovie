@@ -59,7 +59,7 @@ async function seedComboItemsIfEmpty(pool) {
     await pool.query(
       `INSERT INTO ComboItems (Id, Name, Description, Price, Category, ImageUrl, IsActive)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [nanoid(11), item.name, item.description, item.price, item.category, '', true]
+      [nanoid(11), item.name, item.description, item.price, item.category, item.imageUrl, true]
     );
   }
   console.log(`[migrate] Đã seed ${DEFAULT_COMBO_ITEMS.length} sản phẩm bắp/nước/combo.`);
