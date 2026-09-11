@@ -20,17 +20,13 @@ services:
       - key: DB_SSL
         value: "true"
 
-      - key: SMTP_HOST
-        value: smtp.gmail.com
-      - key: SMTP_PORT
-        value: "465"
-      - key: SMTP_SECURE
-        value: "true"
-      - key: SMTP_USER
+      - key: EMAILJS_SERVICE_ID
         sync: false
-      - key: SMTP_PASS
+      - key: EMAILJS_TEMPLATE_ID
         sync: false
-      - key: MAIL_FROM
+      - key: EMAILJS_PUBLIC_KEY
+        sync: false
+      - key: EMAILJS_PRIVATE_KEY
         sync: false
 
       - key: GOOGLE_CLIENT_ID
