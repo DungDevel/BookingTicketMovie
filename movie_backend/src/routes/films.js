@@ -23,33 +23,33 @@ async function fetchAllFilms(pool) {
 
   const genresByFilm = {};
   for (const g of genresResult.rows) {
-    (genresByFilm[g.FilmId] ??= []).push(g.Genre);
+    (genresByFilm[g.filmid] ??= []).push(g.genre);
   }
 
   const castsByFilm = {};
   for (const c of castsResult.rows) {
-    (castsByFilm[c.FilmId] ??= []).push({ PicUrl: c.PicUrl || '', Actor: c.Actor || '' });
+    (castsByFilm[c.filmid] ??= []).push({ PicUrl: c.picurl || '', Actor: c.actor || '' });
   }
 
-  return filmsResult.rows.map((f) => mapFilm(f, genresByFilm[f.Id] || [], castsByFilm[f.Id] || []));
+  return filmsResult.rows.map((f) => mapFilm(f, genresByFilm[f.id] || [], castsByFilm[f.id] || []));
 }
 
 function mapFilm(row, genres, casts) {
   return {
-    id: row.Id,
-    Title: row.Title,
-    Description: row.Description || '',
-    Poster: row.Poster || '',
+    id: row.id,
+    Title: row.title,
+    Description: row.description || '',
+    Poster: row.poster || '',
     Time: row.Time || '',
-    Trailer: row.Trailer || '',
-    Imdb: row.Imdb || 0,
+    Trailer: row.trailer || '',
+    Imdb: row.imdb || 0,
     Year: row.Year || 0,
-    price: row.Price || 0,
+    price: row.price || 0,
     Genre: genres,
     Casts: casts,
-    IsNowShowing: !!row.IsNowShowing,
-    IsUpcoming: !!row.IsUpcoming,
-    ReleaseAt: row.ReleaseAt != null ? Number(row.ReleaseAt) : null
+    IsNowShowing: !!row.isnowshowing,
+    IsUpcoming: !!row.isupcoming,
+    ReleaseAt: row.releaseat != null ? Number(row.releaseat) : null
   };
 }
 
@@ -65,8 +65,8 @@ async function fetchOneFilm(pool, id) {
 
   return mapFilm(
     row,
-    genresResult.rows.map((g) => g.Genre),
-    castsResult.rows.map((c) => ({ PicUrl: c.PicUrl || '', Actor: c.Actor || '' }))
+    genresResult.rows.map((g) => g.genre),
+    castsResult.rows.map((c) => ({ PicUrl: c.picurl || '', Actor: c.actor || '' }))
   );
 }
 
